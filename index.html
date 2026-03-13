@@ -48,6 +48,7 @@
   .tab.on { background: #fff; color: var(--g800); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
   .scard { border: 1.5px solid var(--g200); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: .15s; }
   .scard:hover, .scard.sel { border-color: var(--orange); background: #fff7ed; }
+  .scard.cancelled { border-color: var(--red); background: #fef2f2; opacity: .7; }
   .ebox { background: linear-gradient(135deg,#fff7ed,#fef3c7); border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 16px; }
   .sbar { height: 8px; background: var(--g200); border-radius: 99px; overflow: hidden; margin-top: 8px; }
   .sfill { height: 100%; border-radius: 99px; transition: width .3s; }
@@ -63,6 +64,9 @@
   .sm { font-size: .85rem; } .xs { font-size: .75rem; } .tg { color: var(--g500); }
   .mt2 { margin-top: 8px; } .mt3 { margin-top: 12px; } .mb3 { margin-bottom: 12px; }
   .hide { display: none; }
+  .run-pill { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: .8rem; font-weight: 600; cursor: pointer; border: 2px solid var(--g300); background: #fff; color: var(--g600); margin: 0 4px 8px 0; transition: .15s; }
+  .run-pill.on { border-color: var(--orange); background: #fff7ed; color: var(--orange-dark); }
+  .cancelled-banner { background: var(--red); color: #fff; padding: 10px 14px; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 12px; }
   @media(max-width:480px) { .grid2 { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -70,29 +74,64 @@
 <div id="app"></div>
 
 <script>
-// ─── DATA LAYER ──────────────────────────────────
+// --- DATA LAYER ---
 const STORAGE_KEY = 'hoops_rsvp_data';
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
+function migrateData(d) {
+  // Migrate from old single-run format to multi-run format
+  if (!d.runs) {
+    const s = d.settings || {};
+    const runId = genId();
+    d.runs = [{
+      id: runId,
+      name: s.leagueName || 'Weekly Run',
+      dayOfWeek: s.dayOfWeek != null ? s.dayOfWeek : 4,
+      time: s.time || '20:00',
+      location: s.location || '',
+      capacity: s.capacity || 15,
+      dropInFee: s.dropInFee || '15',
+      etransferEmail: s.etransferEmail || '',
+      active: true
+    }];
+    // Tag all existing sessions with this run
+    (d.sessions || []).forEach(sess => { if (!sess.runId) sess.runId = runId; });
+    // Clean up settings that moved to runs
+    delete s.dayOfWeek; delete s.time; delete s.location;
+    delete s.capacity; delete s.dropInFee; delete s.etransferEmail;
+  }
+  // Ensure cancelled flag exists on sessions
+  (d.sessions || []).forEach(sess => { if (sess.cancelled == null) sess.cancelled = false; });
+  // Ensure global settings have required keys
+  if (!d.settings) d.settings = {};
+  if (!d.settings.leagueName) d.settings.leagueName = 'Hoops Night';
+  if (!d.settings.adminPassword) d.settings.adminPassword = '';
+  if (d.settings.signupOpensHoursBefore == null) d.settings.signupOpensHoursBefore = 72;
+  if (d.settings.allowWaitlist == null) d.settings.allowWaitlist = true;
+  if (!d.settings.seasonName) d.settings.seasonName = '';
+  if (!d.roster) d.roster = [];
+  if (!d.sessions) d.sessions = [];
+  return d;
+}
+
 function loadData() {
-  try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch(e) {}
-  return {
-    settings: { leagueName:'Hoops Night', location:'', dayOfWeek:4, time:'20:00', capacity:15,
-      etransferEmail:'', dropInFee:'15', adminPassword:'', signupOpensHoursBefore:72,
-      allowWaitlist:true, seasonName:'' },
-    roster: [], sessions: []
-  };
+  try { const r = localStorage.getItem(STORAGE_KEY); if (r) return migrateData(JSON.parse(r)); } catch(e) {}
+  return migrateData({
+    settings: { leagueName:'Hoops Night', adminPassword:'', signupOpensHoursBefore:72, allowWaitlist:true, seasonName:'' },
+    runs: [], roster: [], sessions: []
+  });
 }
 function saveData(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch(e) {} }
 
 let D = loadData();
-let state = { view:'player', adminTab:'sessions', adminAuth:false, selectedSessionId:null, managingId:null };
+let state = { view:'player', adminTab:'sessions', adminAuth:false, selectedSessionId:null, managingId:null, selectedRunId:null, editingRunId:null };
 
 function genId() { return Math.random().toString(36).slice(2,10); }
 function fmtDate(d) { return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); }
 function fmtTime(ts) { return new Date(ts).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
 function fmtSettingTime(t) { return new Date('2000-01-01T'+t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
 function today() { return new Date().toISOString().split('T')[0]; }
+function getRun(id) { return D.runs.find(r=>r.id===id); }
 
 let alertTimer = null;
 function showAlert(msg, type) {
@@ -104,7 +143,7 @@ function showAlert(msg, type) {
   alertTimer = setTimeout(() => { el.style.display='none'; }, 2500);
 }
 
-// ─── RENDERING ───────────────────────────────────
+// --- RENDERING ---
 function h(tag, attrs, ...kids) {
   const el = document.createElement(tag);
   if (attrs) Object.entries(attrs).forEach(([k,v]) => {
@@ -122,9 +161,16 @@ function render() {
   const app = document.getElementById('app');
   app.innerHTML = '';
 
-  // Auto-select first upcoming session
-  const upcoming = D.sessions.filter(s => s.date >= today()).sort((a,b) => a.date.localeCompare(b.date));
-  if (!state.selectedSessionId && upcoming[0]) state.selectedSessionId = upcoming[0].id;
+  // Auto-select first active run if none selected
+  if (!state.selectedRunId && D.runs.length) {
+    state.selectedRunId = D.runs.filter(r=>r.active)[0]?.id || D.runs[0]?.id;
+  }
+
+  // Auto-select first upcoming non-cancelled session for selected run
+  const upcoming = D.sessions.filter(s => s.date >= today() && !s.cancelled && s.runId === state.selectedRunId).sort((a,b) => a.date.localeCompare(b.date));
+  if (!state.selectedSessionId || !D.sessions.find(s=>s.id===state.selectedSessionId && s.runId===state.selectedRunId)) {
+    state.selectedSessionId = upcoming[0]?.id || null;
+  }
 
   if (state.view === 'admin' && !state.adminAuth) {
     app.append(renderAdminLogin());
@@ -136,7 +182,7 @@ function render() {
   app.append(renderNav());
 }
 
-// ─── NAV ─────────────────────────────────────────
+// --- NAV ---
 function renderNav() {
   return h('div', {className:'nav'},
     h('button', {className:'navb'+(state.view==='player'?' on':''), onClick:()=>{state.view='player';render();}},
@@ -146,7 +192,7 @@ function renderNav() {
   );
 }
 
-// ─── ADMIN LOGIN ─────────────────────────────────
+// --- ADMIN LOGIN ---
 function renderAdminLogin() {
   const isNew = !D.settings.adminPassword;
   let pwVal = '';
@@ -181,17 +227,18 @@ function renderAdminLogin() {
   );
 }
 
-// ─── ADMIN PANEL ─────────────────────────────────
+// --- ADMIN PANEL ---
 function renderAdmin() {
   const tabs = h('div', {className:'tabs'},
-    ...['sessions','roster','settings'].map(t =>
-      h('button', {className:'tab'+(state.adminTab===t?' on':''), onClick:()=>{state.adminTab=t;render();}},
+    ...['sessions','runs','roster','settings'].map(t =>
+      h('button', {className:'tab'+(state.adminTab===t?' on':''), onClick:()=>{state.adminTab=t;state.editingRunId=null;render();}},
         t.charAt(0).toUpperCase()+t.slice(1)))
   );
 
   let content;
   if (state.adminTab === 'settings') content = renderAdminSettings();
   else if (state.adminTab === 'roster') content = renderAdminRoster();
+  else if (state.adminTab === 'runs') content = renderAdminRuns();
   else content = renderAdminSessions();
 
   return h('div', null,
@@ -206,7 +253,118 @@ function renderAdmin() {
   );
 }
 
-// ─── ADMIN: SETTINGS ─────────────────────────────
+// --- ADMIN: RUNS ---
+function renderAdminRuns() {
+  if (state.editingRunId) {
+    const run = D.runs.find(r=>r.id===state.editingRunId);
+    if (run) return renderRunEditor(run);
+    state.editingRunId = null;
+  }
+
+  const addRun = () => {
+    const newRun = { id:genId(), name:'New Run', dayOfWeek:4, time:'20:00', location:'', capacity:15, dropInFee:'15', etransferEmail:'', active:true };
+    D.runs.push(newRun);
+    state.editingRunId = newRun.id;
+    showAlert('Run created! Configure it now.');
+    render();
+  };
+
+  const runCards = D.runs.map(run => {
+    const sessCount = D.sessions.filter(s=>s.runId===run.id && s.date>=today() && !s.cancelled).length;
+    return h('div', {className:'scard'+(run.active?'':' cancelled'), onClick:()=>{state.editingRunId=run.id;render();}},
+      h('div', {className:'flex ac jb'},
+        h('div', null,
+          h('div', {style:{fontWeight:600,fontSize:'1.05rem'}}, run.name),
+          h('div', {className:'xs tg mt2'},
+            DAYS[run.dayOfWeek]+'s at '+fmtSettingTime(run.time),
+            run.location ? ' \u00B7 '+run.location : ''
+          ),
+          h('div', {className:'xs tg'}, sessCount+' upcoming session'+(sessCount!==1?'s':''))
+        ),
+        h('div', {className:'flex ac g2'},
+          h('span', {className:'badge '+(run.active?'b-gr':'b-rd')}, run.active?'Active':'Inactive'),
+          h('span', {className:'sm tg'}, '\u2192')
+        )
+      )
+    );
+  });
+
+  return h('div', null,
+    h('div', {className:'card'},
+      h('div', {className:'flex ac jb mb3'},
+        h('h2', {style:{margin:0}}, 'Runs'),
+        h('button', {className:'btn btn-sm btn-or', onClick:addRun}, '+ Add Run')
+      ),
+      h('p', {className:'sm tg mb3'}, 'Each run is a separate recurring game night with its own day, time, location, and capacity.'),
+      runCards.length ? h('div', null, ...runCards) : h('p', {className:'sm tg tc', style:{padding:'20px'}}, 'No runs yet. Add one to get started!')
+    )
+  );
+}
+
+function renderRunEditor(run) {
+  const fields = {};
+  function mkField(lbl, key, type, opts) {
+    const wrap = h('div', {className:'fg'}, h('label', null, lbl));
+    let inp;
+    if (type === 'select') {
+      inp = h('select', null, ...opts.map(o => {
+        const op = h('option', {value: o.value}, o.label);
+        if (String(run[key]) === String(o.value)) op.selected = true;
+        return op;
+      }));
+      inp.addEventListener('change', e => { fields[key] = opts[0]?.num ? Number(e.target.value) : e.target.value; });
+    } else {
+      inp = h('input', {type: type||'text', value: run[key]||'', placeholder: opts?.ph||''});
+      inp.addEventListener('input', e => { fields[key] = type==='number' ? Number(e.target.value) : e.target.value; });
+    }
+    fields[key] = run[key];
+    wrap.append(inp);
+    return wrap;
+  }
+
+  const save = () => { Object.assign(run, fields); saveData(D); showAlert('Run saved!'); render(); };
+
+  const toggleActive = () => { run.active = !run.active; saveData(D); showAlert(run.active?'Run activated':'Run deactivated'); render(); };
+
+  const deleteRun = () => {
+    const sessCount = D.sessions.filter(s=>s.runId===run.id).length;
+    if (confirm('Delete "'+run.name+'"'+(sessCount?' and its '+sessCount+' sessions':'')+' ?')) {
+      D.sessions = D.sessions.filter(s=>s.runId!==run.id);
+      D.runs = D.runs.filter(r=>r.id!==run.id);
+      state.editingRunId = null;
+      showAlert('Run deleted');
+      render();
+    }
+  };
+
+  return h('div', null,
+    h('button', {className:'btn btn-sm btn-out', style:{marginBottom:'12px'}, onClick:()=>{state.editingRunId=null;render();}}, '\u2190 Back to Runs'),
+    h('div', {className:'card'},
+      h('h2', null, 'Edit Run'),
+      mkField('Run Name','name','text',{ph:'e.g. Thursday Night Hoops'}),
+      h('div', {className:'grid2'},
+        mkField('Day of Week','dayOfWeek','select', DAYS.map((d,i)=>({value:i,label:d,num:true}))),
+        mkField('Time','time','time')
+      ),
+      mkField('Location','location','text',{ph:'e.g. Community Centre Gym'}),
+      h('div', {className:'grid2'},
+        mkField('Capacity','capacity','number'),
+        mkField('Drop-in Fee ($)','dropInFee','text',{ph:'15'})
+      ),
+      mkField('e-Transfer Email','etransferEmail','email',{ph:'your@email.com'}),
+      h('button', {className:'btn btn-or wf mt2', onClick: save}, 'Save Run')
+    ),
+    h('div', {className:'card'},
+      h('h2', null, 'Run Status'),
+      h('div', {className:'flex g2'},
+        h('button', {className:'btn wf '+(run.active?'btn-gy':'btn-gr'), onClick:toggleActive}, run.active?'Deactivate Run':'Activate Run'),
+        h('button', {className:'btn btn-rd wf', onClick:deleteRun}, 'Delete Run')
+      )
+    )
+  );
+}
+
+// --- ADMIN: SETTINGS ---
 function renderAdminSettings() {
   const s = D.settings;
   const fields = {};
@@ -244,7 +402,7 @@ function renderAdminSettings() {
     const r = new FileReader();
     r.onload = ev => {
       try {
-        const imp = JSON.parse(ev.target.result);
+        const imp = migrateData(JSON.parse(ev.target.result));
         if (imp.settings && imp.sessions) { Object.assign(D, imp); saveData(D); showAlert('Data imported!'); render(); }
         else showAlert('Invalid file','error');
       } catch { showAlert('Error reading file','error'); }
@@ -255,19 +413,9 @@ function renderAdminSettings() {
 
   return h('div', null,
     h('div', {className:'card'},
-      h('h2', null, 'League Settings'),
-      mkField('League Name','leagueName','text',{ph:'e.g. Thursday Night Hoops'}),
+      h('h2', null, 'General Settings'),
+      mkField('League Name','leagueName','text',{ph:'e.g. Hoops Night'}),
       mkField('Season Name','seasonName','text',{ph:'e.g. Winter 2026'}),
-      mkField('Location','location','text',{ph:'e.g. Community Centre Gym'}),
-      h('div', {className:'grid2'},
-        mkField('Day of Week','dayOfWeek','select', DAYS.map((d,i)=>({value:i,label:d,num:true}))),
-        mkField('Time','time','time')
-      ),
-      h('div', {className:'grid2'},
-        mkField('Capacity','capacity','number'),
-        mkField('Drop-in Fee ($)','dropInFee','text',{ph:'15'})
-      ),
-      mkField('e-Transfer Email','etransferEmail','email',{ph:'your@email.com'}),
       mkField('Sign-ups Open (hours before)','signupOpensHoursBefore','number'),
       h('button', {className:'btn btn-or wf mt2', onClick: save}, 'Save Settings')
     ),
@@ -283,7 +431,7 @@ function renderAdminSettings() {
   );
 }
 
-// ─── ADMIN: ROSTER ───────────────────────────────
+// --- ADMIN: ROSTER ---
 function renderAdminRoster() {
   let newName = '', newType = 'dropin';
   const nameInp = h('input', {placeholder:'Player name', style:{flex:'2'}});
@@ -345,7 +493,7 @@ function renderAdminRoster() {
   return h('div', null, ...parts);
 }
 
-// ─── ADMIN: SESSIONS ─────────────────────────────
+// --- ADMIN: SESSIONS ---
 function renderAdminSessions() {
   if (state.managingId) {
     const sess = D.sessions.find(s=>s.id===state.managingId);
@@ -353,27 +501,51 @@ function renderAdminSessions() {
     state.managingId = null;
   }
 
-  let genStart = '', genWeeks = 12;
+  // Run filter pills
+  const activeRuns = D.runs.filter(r=>r.active);
+  const runFilter = activeRuns.length > 1 ? h('div', {className:'mb3', style:{display:'flex',flexWrap:'wrap'}},
+    h('button', {className:'run-pill'+(!state.adminRunFilter?' on':''), onClick:()=>{state.adminRunFilter=null;render();}}, 'All Runs'),
+    ...activeRuns.map(run =>
+      h('button', {className:'run-pill'+(state.adminRunFilter===run.id?' on':''), onClick:()=>{state.adminRunFilter=run.id;render();}}, run.name)
+    )
+  ) : null;
+
+  // Generate sessions panel
+  let genRunId = activeRuns[0]?.id || '', genStart = '', genWeeks = 12;
   const genPanel = h('div', {style:{background:'var(--g50)',borderRadius:'10px',padding:'14px',marginBottom:'14px',display:'none'}});
+
+  const runSelect = h('select', null, ...activeRuns.map(r => {
+    const op = h('option', {value:r.id}, r.name+' ('+DAYS[r.dayOfWeek]+'s)');
+    return op;
+  }));
+  runSelect.addEventListener('change', e => genRunId=e.target.value);
+  if(activeRuns[0]) genRunId = activeRuns[0].id;
+
   const startInp = h('input', {type:'date'});
   startInp.addEventListener('input', e => genStart=e.target.value);
   const weeksInp = h('input', {type:'number', value:'12', min:'1', max:'52'});
   weeksInp.addEventListener('input', e => genWeeks=Number(e.target.value));
 
   const doGen = () => {
-    if(!genStart) return;
+    if(!genStart || !genRunId) { showAlert('Select a run and start date','error'); return; }
+    const run = getRun(genRunId);
+    if(!run) return;
     const start = new Date(genStart+'T12:00:00');
+    let added = 0;
     for(let i=0;i<genWeeks;i++){
       const d=new Date(start); d.setDate(d.getDate()+(i*7));
       const ds=d.toISOString().split('T')[0];
-      if(!D.sessions.find(s=>s.date===ds))
-        D.sessions.push({id:genId(),date:ds,capacity:D.settings.capacity,rsvps:[],notes:''});
+      if(!D.sessions.find(s=>s.date===ds && s.runId===genRunId)) {
+        D.sessions.push({id:genId(),date:ds,runId:genRunId,capacity:run.capacity,rsvps:[],notes:'',cancelled:false});
+        added++;
+      }
     }
     D.sessions.sort((a,b)=>a.date.localeCompare(b.date));
-    showAlert('Generated '+genWeeks+' sessions!'); render();
+    showAlert('Generated '+added+' sessions for '+run.name+'!'); render();
   };
 
   genPanel.append(
+    h('div', {className:'fg'}, h('label',null,'Run'), runSelect),
     h('div', {className:'grid2'},
       h('div', {className:'fg'}, h('label',null,'First Session Date'), startInp),
       h('div', {className:'fg'}, h('label',null,'Number of Weeks'), weeksInp)
@@ -385,26 +557,29 @@ function renderAdminSessions() {
     genPanel.style.display = genPanel.style.display==='none'?'block':'none';
   }}, '+ Generate Sessions');
 
-  const up = D.sessions.filter(s=>s.date>=today()).sort((a,b)=>a.date.localeCompare(b.date));
-  const past = D.sessions.filter(s=>s.date<today()).sort((a,b)=>b.date.localeCompare(a.date));
+  // Filter sessions
+  const filterFn = s => state.adminRunFilter ? s.runId === state.adminRunFilter : true;
+  const up = D.sessions.filter(s=>s.date>=today() && filterFn(s)).sort((a,b)=>a.date.localeCompare(b.date));
+  const past = D.sessions.filter(s=>s.date<today() && filterFn(s)).sort((a,b)=>b.date.localeCompare(a.date));
 
   const sessionList = [];
   if (up.length) {
     sessionList.push(h('h3', {className:'sm', style:{color:'var(--green)'}}, 'Upcoming ('+up.length+')'));
     up.forEach(s => {
+      const run = getRun(s.runId);
       const rc = (s.rsvps||[]).filter(r=>r.status!=='not_available').length;
-      const cap = s.capacity||D.settings.capacity;
+      const cap = s.capacity||run?.capacity||15;
       const paid = (s.rsvps||[]).filter(r=>r.paid&&r.type!=='fulltime').length;
       const unpaid = (s.rsvps||[]).filter(r=>!r.paid&&r.type!=='fulltime'&&r.status!=='not_available').length;
-      sessionList.push(h('div', {className:'scard', onClick:()=>{state.managingId=s.id;render();}},
+      sessionList.push(h('div', {className:'scard'+(s.cancelled?' cancelled':''), onClick:()=>{state.managingId=s.id;render();}},
         h('div', {className:'flex ac jb'},
           h('div', null,
-            h('div', {style:{fontWeight:600}}, fmtDate(s.date)),
-            h('div', {className:'xs tg'}, rc+'/'+cap+' signed up')
+            h('div', {style:{fontWeight:600}}, fmtDate(s.date), s.cancelled ? h('span',{className:'badge b-rd',style:{marginLeft:'8px'}},'Cancelled') : null),
+            h('div', {className:'xs tg'}, (run?.name||'Unknown run')+' \u00B7 '+rc+'/'+cap+' signed up')
           ),
           h('div', {className:'flex g2'},
-            paid>0 ? h('span',{className:'badge b-gr'},paid+' paid') : null,
-            unpaid>0 ? h('span',{className:'badge b-yl'},unpaid+' unpaid') : null
+            !s.cancelled && paid>0 ? h('span',{className:'badge b-gr'},paid+' paid') : null,
+            !s.cancelled && unpaid>0 ? h('span',{className:'badge b-yl'},unpaid+' unpaid') : null
           )
         )
       ));
@@ -414,42 +589,61 @@ function renderAdminSessions() {
     sessionList.push(h('div',{className:'divider'}));
     sessionList.push(h('h3',{className:'sm tg'},'Past ('+past.length+')'));
     past.slice(0,5).forEach(s => {
+      const run = getRun(s.runId);
       const rc=(s.rsvps||[]).filter(r=>r.status!=='not_available').length;
-      sessionList.push(h('div',{className:'scard',style:{opacity:.7},onClick:()=>{state.managingId=s.id;render();}},
+      sessionList.push(h('div',{className:'scard'+(s.cancelled?' cancelled':''),style:{opacity:.7},onClick:()=>{state.managingId=s.id;render();}},
         h('div',{className:'flex ac jb'},
-          h('span',{style:{fontWeight:500}},fmtDate(s.date)),
-          h('span',{className:'sm tg'},rc+' attended')
+          h('div',null,
+            h('span',{style:{fontWeight:500}},fmtDate(s.date)),
+            s.cancelled ? h('span',{className:'badge b-rd',style:{marginLeft:'8px'}},'Cancelled') : null,
+            h('div',{className:'xs tg'},run?.name||'')
+          ),
+          h('span',{className:'sm tg'},s.cancelled?'Cancelled':rc+' attended')
         )
       ));
     });
   }
   if (!up.length && !past.length) sessionList.push(h('p',{className:'sm tg tc',style:{padding:'20px'}},'No sessions yet. Generate some above!'));
 
-  return h('div',{className:'card'},
-    h('div',{className:'flex ac jb mb3'}, h('h2',{style:{margin:0}},'Sessions'), toggleGen),
-    genPanel,
-    ...sessionList
+  return h('div',null,
+    h('div',{className:'card'},
+      h('div',{className:'flex ac jb mb3'}, h('h2',{style:{margin:0}},'Sessions'), toggleGen),
+      genPanel,
+      runFilter,
+      ...sessionList
+    )
   );
 }
 
-// ─── SESSION MANAGER ─────────────────────────────
+// --- SESSION MANAGER ---
 function renderSessionManager(sess) {
+  const run = getRun(sess.runId);
   const rsvps = sess.rsvps||[];
   const confirmed = rsvps.filter(r=>r.status!=='not_available');
   const notAvail = rsvps.filter(r=>r.status==='not_available');
-  const cap = sess.capacity||D.settings.capacity;
+  const cap = sess.capacity||run?.capacity||15;
 
-  const capInp = h('input',{type:'number',value:String(sess.capacity||D.settings.capacity)});
+  const capInp = h('input',{type:'number',value:String(sess.capacity||run?.capacity||15)});
   capInp.addEventListener('input',e=>{sess.capacity=Number(e.target.value);saveData(D);});
 
+  // Cancel / reinstate button
+  const cancelBtn = h('button',{className:'btn btn-sm '+(sess.cancelled?'btn-gr':'btn-gy'),onClick:()=>{
+    sess.cancelled = !sess.cancelled;
+    showAlert(sess.cancelled ? 'Session cancelled' : 'Session reinstated');
+    render();
+  }}, sess.cancelled ? '\u2714 Reinstate' : '\u{1F6AB} Cancel');
+
   const shareBtn = h('button',{className:'btn btn-sm btn-bl',onClick:()=>{
-    const lines=['\u{1F3C0} '+D.settings.leagueName+' \u2014 '+fmtDate(sess.date)];
-    if(D.settings.time) lines.push('\u23F0 '+fmtSettingTime(D.settings.time));
-    if(D.settings.location) lines.push('\u{1F4CD} '+D.settings.location);
+    const lines=['\u{1F3C0} '+(run?.name||D.settings.leagueName)+' \u2014 '+fmtDate(sess.date)];
+    if(sess.cancelled) { lines.push('','CANCELLED'); navigator.clipboard?.writeText(lines.join('\n')); showAlert('Copied!'); return; }
+    if(run?.time) lines.push('\u23F0 '+fmtSettingTime(run.time));
+    if(run?.location) lines.push('\u{1F4CD} '+run.location);
     lines.push('',confirmed.length+'/'+cap+' spots filled');
     if(confirmed.length){lines.push('','Who\'s in:');
       confirmed.forEach((r,i)=>{const tag=r.type==='fulltime'?' (FT)':r.paid?' \u2705':' \u{1F4B0}';lines.push((i+1)+'. '+r.name+tag);});}
-    if(D.settings.etransferEmail) lines.push('','\u{1F4B0} Drop-in: $'+(D.settings.dropInFee||'15')+' \u2192 '+D.settings.etransferEmail);
+    const email = run?.etransferEmail || '';
+    const fee = run?.dropInFee || '15';
+    if(email) lines.push('','\u{1F4B0} Drop-in: $'+fee+' \u2192 '+email);
     navigator.clipboard?.writeText(lines.join('\n')); showAlert('Copied to clipboard!');
   }}, '\u{1F4CB} Share');
 
@@ -492,22 +686,27 @@ function renderSessionManager(sess) {
 
   const paidCount = confirmed.filter(r=>r.paid||r.type==='fulltime').length;
   const unpaidCount = confirmed.filter(r=>!r.paid&&r.type!=='fulltime').length;
-  const revenue = confirmed.filter(r=>r.type!=='fulltime'&&r.paid).length*(parseFloat(D.settings.dropInFee)||15);
+  const fee = parseFloat(run?.dropInFee||'15')||15;
+  const revenue = confirmed.filter(r=>r.type!=='fulltime'&&r.paid).length*fee;
 
   return h('div',null,
     h('button',{className:'btn btn-sm btn-out',style:{marginBottom:'12px'},onClick:()=>{state.managingId=null;render();}},'\u2190 Back to Sessions'),
+    sess.cancelled ? h('div',{className:'cancelled-banner'},'\u{1F6AB} This session is cancelled') : null,
     h('div',{className:'card'},
       h('div',{className:'flex ac jb'},
-        h('div',null,h('h2',{style:{margin:0}},fmtDate(sess.date)),h('span',{className:'sm tg'},confirmed.length+'/'+cap+' spots')),
-        h('div',{className:'flex g2'},shareBtn,delBtn)
+        h('div',null,
+          h('h2',{style:{margin:0}},fmtDate(sess.date)),
+          h('span',{className:'sm tg'},(run?.name||'')+' \u00B7 '+confirmed.length+'/'+cap+' spots')
+        ),
+        h('div',{className:'flex g2'},cancelBtn,shareBtn,delBtn)
       ),
-      h('div',{className:'fg mt3'},h('label',null,'Session Capacity'),capInp)
+      !sess.cancelled ? h('div',{className:'fg mt3'},h('label',null,'Session Capacity'),capInp) : null
     ),
-    h('div',{className:'card'},
+    !sess.cancelled ? h('div',{className:'card'},
       h('h3',null,'RSVPs ('+confirmed.length+')'),
       confirmed.length ? h('div',null,...rsvpRows,...naRows) : h('p',{className:'sm tg'},'No RSVPs yet')
-    ),
-    h('div',{className:'card'},
+    ) : null,
+    !sess.cancelled ? h('div',{className:'card'},
       h('h3',null,'Quick Stats'),
       h('div',{className:'grid2'},
         h('div',{style:{background:'var(--g50)',borderRadius:'8px',padding:'12px',textAlign:'center'}},
@@ -520,14 +719,43 @@ function renderSessionManager(sess) {
         )
       ),
       revenue>0 ? h('div',{className:'mt3 sm tc tg'},'Drop-in revenue: $'+revenue) : null
-    )
+    ) : null
   );
 }
 
-// ─── PLAYER VIEW ─────────────────────────────────
+// --- PLAYER VIEW ---
 function renderPlayer() {
-  const upcoming = D.sessions.filter(s=>s.date>=today()).sort((a,b)=>a.date.localeCompare(b.date));
-  const sess = D.sessions.find(s=>s.id===state.selectedSessionId) || upcoming[0];
+  const activeRuns = D.runs.filter(r=>r.active);
+
+  // Run picker if multiple runs
+  let runPicker = null;
+  if (activeRuns.length > 1) {
+    runPicker = h('div', {className:'card'},
+      h('div', {style:{display:'flex',flexWrap:'wrap',gap:'0'}},
+        ...activeRuns.map(run =>
+          h('button', {className:'run-pill'+(state.selectedRunId===run.id?' on':''), onClick:()=>{
+            state.selectedRunId=run.id; state.selectedSessionId=null; render();
+          }}, run.name)
+        )
+      )
+    );
+  } else if (activeRuns.length === 1 && !state.selectedRunId) {
+    state.selectedRunId = activeRuns[0].id;
+  }
+
+  const currentRun = getRun(state.selectedRunId);
+  const upcoming = D.sessions.filter(s => s.date >= today() && !s.cancelled && s.runId === state.selectedRunId).sort((a,b) => a.date.localeCompare(b.date));
+  const sess = D.sessions.find(s=>s.id===state.selectedSessionId && s.runId===state.selectedRunId && !s.cancelled) || upcoming[0];
+
+  // Check for cancelled next session to show notice
+  const nextCancelled = D.sessions.filter(s => s.date >= today() && s.cancelled && s.runId === state.selectedRunId).sort((a,b) => a.date.localeCompare(b.date));
+  let cancelNotice = null;
+  if (nextCancelled.length) {
+    cancelNotice = h('div', {className:'card', style:{background:'#fef2f2',border:'1.5px solid #fecaca'}},
+      h('div', {style:{fontWeight:600,color:'var(--red)'}}, '\u{1F6AB} Cancelled Sessions'),
+      h('div', {className:'xs tg mt2'}, nextCancelled.map(s=>fmtDate(s.date)).join(', '))
+    );
+  }
 
   if(!sess) return h('div',null,
     h('div',{className:'header'},
@@ -535,6 +763,8 @@ function renderPlayer() {
       D.settings.seasonName ? h('p',null,D.settings.seasonName) : null
     ),
     h('div',{className:'container'},
+      runPicker,
+      cancelNotice,
       h('div',{className:'card tc'},
         h('div',{style:{fontSize:'2.5rem'}},'\u{1F4C5}'),
         h('h2',{style:{marginTop:'12px'}},'No Upcoming Sessions'),
@@ -546,13 +776,13 @@ function renderPlayer() {
   const rsvps = sess.rsvps||[];
   const confirmed = rsvps.filter(r=>r.status!=='not_available');
   const notAvail = rsvps.filter(r=>r.status==='not_available');
-  const cap = sess.capacity||D.settings.capacity;
+  const cap = sess.capacity||currentRun?.capacity||15;
   const isFull = confirmed.length>=cap;
   const fillPct = Math.min(100,(confirmed.length/cap)*100);
   const barColor = fillPct>=100?'var(--red)':fillPct>=80?'var(--yellow)':'var(--green)';
 
   const isOpen = ()=>{
-    const sd=new Date(sess.date+'T'+(D.settings.time||'20:00'));
+    const sd=new Date(sess.date+'T'+(currentRun?.time||'20:00'));
     return Date.now()>=sd.getTime()-(D.settings.signupOpensHoursBefore||72)*3600000;
   };
 
@@ -567,7 +797,7 @@ function renderPlayer() {
           return h('button',{className:'scard'+(s.id===sess.id?' sel':''),style:{flex:1,minWidth:'140px',padding:'10px 12px'},
             onClick:()=>{state.selectedSessionId=s.id;render();}},
             h('div',{style:{fontWeight:600,fontSize:'.9rem'}},fmtDate(s.date)),
-            h('div',{className:'xs tg'},rc+'/'+(s.capacity||D.settings.capacity)+' spots')
+            h('div',{className:'xs tg'},rc+'/'+(s.capacity||currentRun?.capacity||15)+' spots')
           );
         })
       )
@@ -640,12 +870,17 @@ function renderPlayer() {
       h('div',{className:'flex ac g3'},h('div',{className:'num num-x'},'\u2716'),h('span',{style:{color:'var(--g400)'}},r.name))))
   ] : [];
 
+  const etransferEmail = currentRun?.etransferEmail || '';
+  const dropInFee = currentRun?.dropInFee || '15';
+
   return h('div',null,
     h('div',{className:'header'},
       h('h1',null,D.settings.leagueName||'Hoops Night'),
       D.settings.seasonName?h('p',null,D.settings.seasonName):null
     ),
     h('div',{className:'container'},
+      runPicker,
+      cancelNotice,
       selector,
       // Session info card
       h('div',{className:'card'},
@@ -654,8 +889,9 @@ function renderPlayer() {
           h('div',null,
             h('h2',{style:{margin:0}},fmtDate(sess.date)),
             h('div',{className:'sm tg',style:{marginTop:'2px'}},
-              D.settings.time?fmtSettingTime(D.settings.time):'',
-              D.settings.location?' \u00B7 '+D.settings.location:'')
+              currentRun?.name||'',
+              currentRun?.time?' \u00B7 '+fmtSettingTime(currentRun.time):'',
+              currentRun?.location?' \u00B7 '+currentRun.location:'')
           )
         ),
         h('div',{style:{marginTop:'12px'}},
@@ -669,10 +905,10 @@ function renderPlayer() {
       // RSVP form
       h('div',{className:'card'}, h('h3',null,'Sign Up'), ...formContent),
       // e-transfer box
-      D.settings.etransferEmail ? h('div',{className:'ebox'},
-        h('div',{className:'sm',style:{fontWeight:600,color:'var(--orange-dark)'}},'\u{1F4B0} Drop-in Fee: $'+(D.settings.dropInFee||'15')),
+      etransferEmail ? h('div',{className:'ebox'},
+        h('div',{className:'sm',style:{fontWeight:600,color:'var(--orange-dark)'}},'\u{1F4B0} Drop-in Fee: $'+dropInFee),
         h('div',{className:'xs tg mt2'},'Send e-Transfer to lock in your spot:'),
-        h('div',{style:{fontWeight:700,fontSize:'1.05rem',marginTop:'4px',wordBreak:'break-all'}},D.settings.etransferEmail),
+        h('div',{style:{fontWeight:700,fontSize:'1.05rem',marginTop:'4px',wordBreak:'break-all'}},etransferEmail),
         h('div',{className:'xs tg mt2'},'Include your name and session date in the memo')
       ) : null,
       // RSVP list
@@ -684,7 +920,7 @@ function renderPlayer() {
   );
 }
 
-// ─── INIT ────────────────────────────────────────
+// --- INIT ---
 document.body.insertBefore(h('div',{id:'alert-box',className:'alert',style:{display:'none'}}), document.getElementById('app'));
 render();
 </script>
