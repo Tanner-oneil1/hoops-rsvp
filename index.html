@@ -1,203 +1,670 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Basketball Run Admin</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; color: #1a1a2e; min-height: 100vh; }
-    .app-header { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .app-header h1 { font-size: 18px; font-weight: 700; color: #1e293b; }
-    .container { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
-    .tab-bar { display: flex; gap: 4px; background: #f1f5f9; border-radius: 8px; padding: 3px; }
-    .tab-btn { padding: 6px 18px; border-radius: 6px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; background: transparent; color: #64748b; transition: all 0.15s; }
-    .tab-btn.active { background: #fff; color: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
-    .btn { padding: 6px 14px; border-radius: 6px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-primary { background: #2563eb; color: #fff; } .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
-    .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; } .btn-secondary:hover:not(:disabled) { background: #e2e8f0; }
-    .btn-danger { background: #ef4444; color: #fff; } .btn-danger:hover:not(:disabled) { background: #dc2626; }
-    .btn-success { background: #16a34a; color: #fff; } .btn-success:hover:not(:disabled) { background: #15803d; }
-    .btn-ghost { background: transparent; color: #64748b; } .btn-ghost:hover { background: #f1f5f9; }
-    .btn-sm { padding: 4px 10px; font-size: 12px; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
-    .badge-blue { background: #dbeafe; color: #1e40af; } .badge-green { background: #dcfce7; color: #166534; }
-    .badge-yellow { background: #fef9c3; color: #854d0e; } .badge-red { background: #fee2e2; color: #991b1b; }
-    .badge-gray { background: #f1f5f9; color: #475569; } .badge-purple { background: #f3e8ff; color: #7c3aed; }
-    .badge-orange { background: #ffedd5; color: #c2410c; }
-    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-    .form-group { display: flex; flex-direction: column; gap: 4px; }
-    .form-label { font-size: 12px; font-weight: 500; color: #64748b; }
-    .form-input, .form-select { border: 1px solid #d1d5db; border-radius: 6px; padding: 7px 10px; font-size: 13px; outline: none; transition: border-color 0.15s; font-family: inherit; }
-    .form-input:focus, .form-select:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
-    .form-select { background: #fff; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
-    .flex-row { display: flex; gap: 8px; align-items: flex-end; }
-    .flex-between { display: flex; justify-content: space-between; align-items: center; }
-    .flex-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
-    .flex-end { display: flex; justify-content: flex-end; gap: 8px; }
-    .mt-1 { margin-top: 4px; } .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; } .mt-4 { margin-top: 16px; }
-    .mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 12px; } .mb-4 { margin-bottom: 16px; }
-    .border-t { border-top: 1px solid #f1f5f9; padding-top: 12px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    thead { background: #f8fafc; }
-    th { text-align: left; padding: 6px 12px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; }
-    td { padding: 8px 12px; border-top: 1px solid #f1f5f9; }
-    th.center, td.center { text-align: center; } th.right, td.right { text-align: right; }
-    .check-box { width: 20px; height: 20px; border-radius: 4px; border: 2px solid #d1d5db; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; font-size: 12px; color: #fff; background: #fff; }
-    .check-box.checked { background: #16a34a; border-color: #16a34a; }
-    .empty { text-align: center; padding: 48px 0; color: #94a3b8; }
-    .empty p:first-child { font-size: 16px; margin-bottom: 4px; } .empty p:last-child { font-size: 13px; }
-    .session-row { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.15s; }
-    .session-row:hover { border-color: #93c5fd; box-shadow: 0 2px 4px rgba(37,99,235,0.08); }
-    .link-btn { background: none; border: none; color: #2563eb; font-size: 13px; cursor: pointer; padding: 0; }
-    .link-btn:hover { text-decoration: underline; }
-    .link-btn.red { color: #ef4444; } .link-btn.green { color: #16a34a; }
-    .blocked-tag { display: inline-flex; align-items: center; gap: 4px; background: #fee2e2; color: #b91c1c; border-radius: 4px; padding: 2px 8px; font-size: 12px; }
-    .blocked-tag button { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px; line-height: 1; }
-    .text-sm { font-size: 13px; } .text-xs { font-size: 12px; } .text-muted { color: #94a3b8; } .text-gray { color: #64748b; }
-    .font-medium { font-weight: 500; } .font-semibold { font-weight: 600; } .font-mono { font-family: monospace; }
-    .success-msg { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; font-size: 14px; }
-    .player-roster-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #f1f5f9; }
-    .player-roster-item:last-child { border-bottom: none; }
-    @media (max-width: 640px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } .flex-row { flex-direction: column; align-items: stretch; } }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hoops RSVP</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+/* Hero / Header */
+.hero { background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e1b4b 100%); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 20px 0; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); }
+.hero-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-icon { width: 42px; height: 42px; background: linear-gradient(135deg, #f97316, #ea580c); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 15px rgba(249,115,22,0.3); }
+.logo-text { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #f97316, #fb923c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
+.admin-link { font-size: 13px; color: #64748b; cursor: pointer; padding: 8px 16px; border-radius: 8px; transition: all 0.2s; border: 1px solid transparent; }
+.admin-link:hover { color: #94a3b8; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+
+/* Container */
+.container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+/* Stats Bar */
+.stats-bar { display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
+.stat-card { flex: 1; min-width: 160px; background: linear-gradient(135deg, rgba(30,41,59,0.8), rgba(15,23,42,0.9)); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 20px 24px; position: relative; overflow: hidden; }
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.stat-card.orange::before { background: linear-gradient(90deg, #f97316, #fb923c); }
+.stat-card.blue::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.stat-card.green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+.stat-card.purple::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.stat-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 8px; }
+.stat-value { font-size: 32px; font-weight: 800; color: #f8fafc; }
+.stat-sub { font-size: 12px; color: #475569; margin-top: 4px; }
+
+/* Section headers */
+.section-title { font-size: 20px; font-weight: 700; color: #f1f5f9; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+.section-title .icon { font-size: 24px; }
+
+/* Run Cards - Player View */
+.runs-grid { display: flex; flex-direction: column; gap: 24px; }
+.run-section { background: linear-gradient(135deg, rgba(30,41,59,0.6), rgba(15,23,42,0.8)); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; overflow: hidden; }
+.run-header { padding: 24px 28px; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.run-name { font-size: 20px; font-weight: 700; color: #f8fafc; }
+.run-meta { display: flex; gap: 16px; flex-wrap: wrap; }
+.run-meta-item { font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 6px; }
+.run-meta-item .dot { width: 6px; height: 6px; border-radius: 50%; }
+.dot-orange { background: #f97316; }
+.dot-blue { background: #3b82f6; }
+.dot-green { background: #10b981; }
+.sessions-list { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+
+/* Session Row */
+.session-row { background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; transition: all 0.2s; flex-wrap: wrap; }
+.session-row:hover { border-color: rgba(249,115,22,0.2); background: rgba(30,41,59,0.5); }
+.session-date { font-size: 15px; font-weight: 600; color: #e2e8f0; min-width: 140px; }
+.session-spots { font-size: 13px; color: #64748b; }
+.session-spots .count { color: #f97316; font-weight: 700; }
+.session-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* Buttons */
+.btn { padding: 8px 20px; border-radius: 10px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; box-shadow: 0 4px 15px rgba(249,115,22,0.3); }
+.btn-primary:hover { box-shadow: 0 6px 20px rgba(249,115,22,0.4); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-secondary { background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); }
+.btn-secondary:hover { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+.btn-danger { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+.btn-danger:hover { background: rgba(239,68,68,0.25); }
+.btn-success { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+.btn-success:hover { background: rgba(16,185,129,0.25); }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-ghost { background: transparent; color: #64748b; border: 1px solid rgba(255,255,255,0.08); }
+.btn-ghost:hover { color: #e2e8f0; background: rgba(255,255,255,0.05); }
+
+/* Inputs */
+.input { background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 16px; color: #e2e8f0; font-size: 14px; font-family: inherit; transition: all 0.2s; width: 100%; }
+.input:focus { outline: none; border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,0.15); }
+.input-sm { padding: 8px 12px; font-size: 13px; }
+select.input { cursor: pointer; }
+
+/* Labels */
+.label { font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+
+/* Sign Up Inline */
+.signup-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.signup-inline .input { width: 140px; }
+
+/* Tags / Badges */
+.badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
+.badge-orange { background: rgba(249,115,22,0.15); color: #fb923c; }
+.badge-green { background: rgba(16,185,129,0.15); color: #34d399; }
+.badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+.badge-gray { background: rgba(100,116,139,0.2); color: #94a3b8; }
+.badge-purple { background: rgba(139,92,246,0.15); color: #a78bfa; }
+
+/* Success / Alert Messages */
+.msg { padding: 12px 20px; border-radius: 12px; font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.msg-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #34d399; }
+.msg-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); color: #fbbf24; }
+.msg-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; }
+
+/* Admin Login */
+.login-box { max-width: 400px; margin: 80px auto; background: linear-gradient(135deg, rgba(30,41,59,0.8), rgba(15,23,42,0.9)); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px; padding: 48px; text-align: center; }
+.login-box h2 { font-size: 24px; font-weight: 700; color: #f8fafc; margin-bottom: 8px; }
+.login-box p { color: #64748b; font-size: 14px; margin-bottom: 28px; }
+.login-box .input { margin-bottom: 16px; text-align: center; }
+
+/* Admin Panel */
+.admin-tabs { display: flex; gap: 4px; background: rgba(15,23,42,0.5); border-radius: 12px; padding: 4px; margin-bottom: 28px; border: 1px solid rgba(255,255,255,0.06); }
+.admin-tab { flex: 1; padding: 10px 16px; border-radius: 8px; border: none; background: transparent; color: #64748b; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; text-align: center; }
+.admin-tab.active { background: rgba(249,115,22,0.15); color: #fb923c; }
+.admin-tab:hover:not(.active) { color: #94a3b8; }
+
+/* Cards */
+.card { background: linear-gradient(135deg, rgba(30,41,59,0.6), rgba(15,23,42,0.8)); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px; margin-bottom: 16px; }
+.card-title { font-size: 16px; font-weight: 700; color: #f8fafc; margin-bottom: 16px; }
+
+/* Form grid */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-grid .full { grid-column: 1 / -1; }
+.form-group { display: flex; flex-direction: column; }
+.form-group .input { margin-top: 2px; }
+
+/* Table-like roster */
+.roster-list { display: flex; flex-direction: column; gap: 6px; }
+.roster-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: rgba(15,23,42,0.4); border-radius: 10px; border: 1px solid rgba(255,255,255,0.03); }
+.roster-item .player-name { font-size: 14px; font-weight: 500; color: #e2e8f0; }
+.roster-item .player-badges { display: flex; gap: 6px; align-items: center; }
+
+/* Player roster in player view */
+.player-roster { margin-top: 12px; padding: 12px 16px; background: rgba(15,23,42,0.3); border-radius: 10px; border: 1px solid rgba(255,255,255,0.03); }
+.player-roster h5 { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.player-roster-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.player-chip { padding: 4px 12px; background: rgba(255,255,255,0.05); border-radius: 99px; font-size: 12px; color: #94a3b8; }
+.player-chip.fulltime { background: rgba(249,115,22,0.12); color: #fb923c; }
+.player-chip.paid { border: 1px solid rgba(16,185,129,0.3); }
+
+/* Blocked weeks */
+.blocked-weeks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.blocked-week { display: flex; align-items: center; gap: 4px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.15); border-radius: 8px; padding: 4px 10px; font-size: 12px; color: #f87171; }
+.blocked-week button { background: none; border: none; color: #f87171; cursor: pointer; font-size: 14px; line-height: 1; }
+
+/* Fulltime players list in admin */
+.ft-player-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.ft-player-row:last-child { border-bottom: none; }
+
+/* Empty states */
+.empty { text-align: center; padding: 48px 20px; color: #475569; }
+.empty .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+.empty p { font-size: 15px; }
+
+/* Expand/Collapse */
+.expandable-header { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px; }
+.expand-arrow { transition: transform 0.2s; font-size: 12px; color: #64748b; }
+.expand-arrow.open { transform: rotate(90deg); }
+
+/* Back button */
+.back-btn { display: inline-flex; align-items: center; gap: 6px; color: #64748b; font-size: 13px; cursor: pointer; margin-bottom: 20px; padding: 6px 12px; border-radius: 8px; transition: all 0.2s; }
+.back-btn:hover { color: #e2e8f0; background: rgba(255,255,255,0.05); }
+
+/* Waitlist section */
+.waitlist-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.04); }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .stats-bar { flex-direction: column; }
+  .form-grid { grid-template-columns: 1fr; }
+  .session-row { flex-direction: column; align-items: flex-start; }
+  .signup-inline { width: 100%; }
+  .signup-inline .input { flex: 1; width: auto; }
+  .hero-inner { flex-direction: column; gap: 12px; }
+  .run-header { flex-direction: column; align-items: flex-start; }
+}
+</style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useMemo, useCallback } = React;
-    const uid = () => Math.random().toString(36).slice(2, 9);
-    const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-    const fmt = (d) => { const dt = new Date(d + "T00:00:00"); return dt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }); };
-    const fmtTime = (t) => { const [h, m] = t.split(":"); const hr = parseInt(h); const ampm = hr >= 12 ? "PM" : "AM"; return `${hr % 12 || 12}:${m} ${ampm}`; };
-    const generateSessionDates = (run) => { if (!run.seasonStart || !run.seasonEnd) return []; const start = new Date(run.seasonStart + "T00:00:00"); const end = new Date(run.seasonEnd + "T00:00:00"); const dayIndex = DAYS.indexOf(run.dayOfWeek); if (dayIndex < 0) return []; const cur = new Date(start); while (cur.getDay() !== dayIndex) cur.setDate(cur.getDate() + 1); const dates = []; const blocked = new Set(run.blockedWeeks || []); while (cur <= end) { const iso = cur.toISOString().split("T")[0]; if (!blocked.has(iso)) dates.push(iso); cur.setDate(cur.getDate() + 7); } return dates; };
-    function App() {
-      const [tab, setTab] = useState("runs");
-      const [runs, setRuns] = useState([]);
-      const [sessions, setSessions] = useState({});
-      const [editingRun, setEditingRun] = useState(null);
-      const [selectedRunId, setSelectedRunId] = useState(null);
-      const [selectedSessionDate, setSelectedSessionDate] = useState(null);
-      const [playerRunId, setPlayerRunId] = useState(null);
-      const [playerSessionDate, setPlayerSessionDate] = useState(null);
-      const saveRun = (run) => { setRuns((prev) => { const exists = prev.find((r) => r.id === run.id); if (exists) return prev.map((r) => (r.id === run.id ? run : r)); return [...prev, run]; }); setEditingRun(null); };
-      const deleteRun = (id) => { if (!confirm("Delete this run and all its session data?")) return; setRuns((prev) => prev.filter((r) => r.id !== id)); if (selectedRunId === id) { setSelectedRunId(null); setSelectedSessionDate(null); } };
-      const getSessionKey = (runId, date) => `${runId}:${date}`;
-      const getSession = (runId, date) => { const key = getSessionKey(runId, date); const run = runs.find((r) => r.id === runId); const base = sessions[key] || { signups: [], waitlist: [], cancelled: false }; if (run) { const existingIds = new Set(base.signups.filter((s) => s.type === "fulltime").map((s) => s.playerId)); const missing = (run.fullTimePlayers || []).filter((p) => !existingIds.has(p.id)); if (missing.length > 0) { return { ...base, signups: [...base.signups, ...missing.map((p) => ({ playerId: p.id, firstName: p.firstName, lastName: p.lastName, type: "fulltime", paid: p.seasonPaid || false, signupTime: new Date().toISOString() }))]}; } } return base; };
-      const updateSession = (runId, date, updater) => { const key = getSessionKey(runId, date); setSessions((prev) => { const current = getSession(runId, date); return { ...prev, [key]: updater(current) }; }); };
-      return (<div><div className="app-header"><h1>Basketball Run Admin</h1><div className="tab-bar"><button className={`tab-btn ${tab === "runs" ? "active" : ""}`} onClick={() => setTab("runs")}>Runs</button><button className={`tab-btn ${tab === "sessions" ? "active" : ""}`} onClick={() => setTab("sessions")}>Sessions</button><button className={`tab-btn ${tab === "signup" ? "active" : ""}`} onClick={() => setTab("signup")}>Player Sign Up</button></div></div><div className="container">{tab === "runs" && (<RunsTab runs={runs} editingRun={editingRun} setEditingRun={setEditingRun} saveRun={saveRun} deleteRun={deleteRun} />)}{tab === "sessions" && (<SessionsTab runs={runs} selectedRunId={selectedRunId} setSelectedRunId={setSelectedRunId} selectedSessionDate={selectedSessionDate} setSelectedSessionDate={setSelectedSessionDate} getSession={getSession} updateSession={updateSession} />)}{tab === "signup" && (<PlayerSignUp runs={runs} playerRunId={playerRunId} setPlayerRunId={setPlayerRunId} playerSessionDate={playerSessionDate} setPlayerSessionDate={setPlayerSessionDate} getSession={getSession} updateSession={updateSession} />)}</div></div>);
-    }
-    function RunsTab({ runs, editingRun, setEditingRun, saveRun, deleteRun }) {
-      return (<div><div className="flex-between mb-3"><h2 className="font-semibold text-gray">Manage Runs</h2>{!editingRun && (<button className="btn btn-primary" onClick={() => setEditingRun({ id: uid(), name: "", dayOfWeek: "Thursday", startTime: "20:00", endTime: "22:00", dropInFee: 10, location: "", rosterLimit: 12, fullTimePlayers: [], blockedWeeks: [], seasonStart: "", seasonEnd: "", listOpensHoursBefore: 48, paymentDeadlineHoursBefore: 2 })}>+ New Run</button>)}</div>{editingRun && <RunForm run={editingRun} onSave={saveRun} onCancel={() => setEditingRun(null)} />}{!editingRun && runs.length === 0 && (<div className="empty"><p>No runs yet</p><p>Create your first run to get started.</p></div>)}{!editingRun && runs.map((run) => (<RunCard key={run.id} run={run} onEdit={() => setEditingRun({ ...run, fullTimePlayers: [...(run.fullTimePlayers || [])], blockedWeeks: [...(run.blockedWeeks || [])] })} onDelete={() => deleteRun(run.id)} />))}</div>);
-    }
-    function RunCard({ run, onEdit, onDelete }) {
-      const sessionDates = generateSessionDates(run);
-      return (<div className="card"><div className="flex-between"><div><div className="font-semibold">{run.name || "Untitled Run"}</div><div className="text-sm text-muted mt-1">{run.dayOfWeek}s · {fmtTime(run.startTime)}–{fmtTime(run.endTime)} · {run.location || "No location"}</div></div><div style={{display:'flex', gap:'6px'}}><button className="btn btn-sm btn-secondary" onClick={onEdit}>Edit</button><button className="btn btn-sm btn-danger" onClick={onDelete}>Delete</button></div></div><div className="flex-wrap mt-3"><span className="badge badge-blue">Roster limit: {run.rosterLimit}</span><span className="badge badge-green">Drop-in: ${run.dropInFee}</span><span className="badge badge-purple">{(run.fullTimePlayers || []).length} full-time</span><span className="badge badge-gray">{sessionDates.length} sessions</span><span className="badge badge-yellow">List opens {run.listOpensHoursBefore}h before</span><span className="badge badge-orange">Pay by {run.paymentDeadlineHoursBefore}h before</span></div>{run.seasonStart && run.seasonEnd && (<div className="text-xs text-muted mt-2">Season: {fmt(run.seasonStart)} → {fmt(run.seasonEnd)}{(run.blockedWeeks || []).length > 0 && ` (${run.blockedWeeks.length} week(s) blocked)`}</div>)}</div>);
-    }
-    function RunForm({ run: initial, onSave, onCancel }) {
-      const [run, setRun] = useState(initial);
-      const [npFirst, setNpFirst] = useState("");
-      const [npLast, setNpLast] = useState("");
-      const [blockDate, setBlockDate] = useState("");
-      const set = (k, v) => setRun((r) => ({ ...r, [k]: v }));
-      const addPlayer = () => { if (!npFirst.trim() || !npLast.trim()) return; set("fullTimePlayers", [...(run.fullTimePlayers || []), { id: uid(), firstName: npFirst.trim(), lastName: npLast.trim(), seasonPaid: false }]); setNpFirst(""); setNpLast(""); };
-      const removePlayer = (id) => set("fullTimePlayers", (run.fullTimePlayers || []).filter((p) => p.id !== id));
-      const togglePlayerPaid = (id) => set("fullTimePlayers", (run.fullTimePlayers || []).map((p) => p.id === id ? { ...p, seasonPaid: !p.seasonPaid } : p));
-      const addBlocked = () => { if (!blockDate || (run.blockedWeeks || []).includes(blockDate)) return; set("blockedWeeks", [...(run.blockedWeeks || []), blockDate].sort()); setBlockDate(""); };
-      const removeBlocked = (d) => set("blockedWeeks", (run.blockedWeeks || []).filter((w) => w !== d));
-      const valid = run.name && run.dayOfWeek && run.startTime && run.endTime && run.seasonStart && run.seasonEnd;
-      return (<div className="card mb-4"><h3 className="font-semibold mb-4">{initial.name ? "Edit Run" : "New Run"}</h3>
-        <div className="grid-2 mb-3"><div className="form-group"><label className="form-label">Run Name</label><input className="form-input" value={run.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Thursday Knoxdale" /></div><div className="form-group"><label className="form-label">Location</label><input className="form-input" value={run.location} onChange={(e) => set("location", e.target.value)} placeholder="e.g. Knoxdale Community Centre" /></div></div>
-        <div className="grid-4 mb-3"><div className="form-group"><label className="form-label">Day of Week</label><select className="form-select" value={run.dayOfWeek} onChange={(e) => set("dayOfWeek", e.target.value)}>{DAYS.map((d) => <option key={d} value={d}>{d}</option>)}</select></div><div className="form-group"><label className="form-label">Start Time</label><input className="form-input" type="time" value={run.startTime} onChange={(e) => set("startTime", e.target.value)} /></div><div className="form-group"><label className="form-label">End Time</label><input className="form-input" type="time" value={run.endTime} onChange={(e) => set("endTime", e.target.value)} /></div><div className="form-group"><label className="form-label">Drop-in Fee ($)</label><input className="form-input" type="number" min="0" value={run.dropInFee} onChange={(e) => set("dropInFee", Number(e.target.value))} /></div></div>
-        <div className="grid-3 mb-3"><div className="form-group"><label className="form-label">Roster Limit</label><input className="form-input" type="number" min="1" value={run.rosterLimit} onChange={(e) => set("rosterLimit", Number(e.target.value))} /></div><div className="form-group"><label className="form-label">List Opens (hours before)</label><input className="form-input" type="number" min="0" value={run.listOpensHoursBefore} onChange={(e) => set("listOpensHoursBefore", Number(e.target.value))} /></div><div className="form-group"><label className="form-label">Payment Required (hours before)</label><input className="form-input" type="number" min="0" value={run.paymentDeadlineHoursBefore} onChange={(e) => set("paymentDeadlineHoursBefore", Number(e.target.value))} /></div></div>
-        <div className="grid-2 mb-4"><div className="form-group"><label className="form-label">Season Start</label><input className="form-input" type="date" value={run.seasonStart} onChange={(e) => set("seasonStart", e.target.value)} /></div><div className="form-group"><label className="form-label">Season End</label><input className="form-input" type="date" value={run.seasonEnd} onChange={(e) => set("seasonEnd", e.target.value)} /></div></div>
-        <div className="mb-4"><label className="form-label mb-2">Blocked Weeks (holidays etc.)</label><div className="flex-row"><input className="form-input" type="date" value={blockDate} onChange={(e) => setBlockDate(e.target.value)} /><button className="btn btn-secondary" onClick={addBlocked}>Block</button></div>{(run.blockedWeeks || []).length > 0 && (<div className="flex-wrap mt-2">{run.blockedWeeks.map((d) => (<span key={d} className="blocked-tag">{fmt(d)}<button onClick={() => removeBlocked(d)}>×</button></span>))}</div>)}</div>
-        <div className="mb-4"><label className="form-label mb-2">Full-Time Players</label><div className="flex-row"><input className="form-input" placeholder="First name" value={npFirst} onChange={(e) => setNpFirst(e.target.value)} /><input className="form-input" placeholder="Last name" value={npLast} onChange={(e) => setNpLast(e.target.value)} /><button className="btn btn-secondary" onClick={addPlayer}>Add</button></div>{(run.fullTimePlayers || []).length > 0 && (<div className="mt-2" style={{border:'1px solid #e2e8f0', borderRadius:'8px', overflow:'hidden'}}><table><thead><tr><th>Name</th><th>ID</th><th className="center">Season Paid</th><th className="right"></th></tr></thead><tbody>{run.fullTimePlayers.map((p) => (<tr key={p.id}><td className="font-medium">{p.firstName} {p.lastName}</td><td className="text-xs text-muted font-mono">{p.id}</td><td className="center"><span className={`check-box ${p.seasonPaid ? "checked" : ""}`} onClick={() => togglePlayerPaid(p.id)}>{p.seasonPaid && "✓"}</span></td><td className="right"><button className="link-btn red" onClick={() => removePlayer(p.id)}>Remove</button></td></tr>))}</tbody></table></div>)}</div>
-        <div className="border-t flex-end"><button className="btn btn-ghost" onClick={onCancel}>Cancel</button><button className="btn btn-primary" disabled={!valid} onClick={() => onSave(run)}>Save Run</button></div></div>);
-        }
-    function SessionsTab({ runs, selectedRunId, setSelectedRunId, selectedSessionDate, setSelectedSessionDate, getSession, updateSession }) {
-      const selectedRun = runs.find((r) => r.id === selectedRunId);
-      const sessionDates = selectedRun ? generateSessionDates(selectedRun) : [];
-      return (<div><h2 className="font-semibold text-gray mb-3">Sessions</h2>
-        {runs.length === 0 && <div className="empty"><p>No runs created yet. Create a run first.</p></div>}
-        {runs.length > 0 && (<div className="form-group mb-4"><label className="form-label">Select Run</label><select className="form-select" value={selectedRunId || ""} onChange={(e) => { setSelectedRunId(e.target.value || null); setSelectedSessionDate(null); }}><option value="">— Choose a run —</option>{runs.map((r) => <option key={r.id} value={r.id}>{r.name} ({r.dayOfWeek}s @ {r.location})</option>)}</select></div>)}
-        {selectedRun && sessionDates.length === 0 && (<p className="text-sm text-muted">No sessions available. Check the season dates and blocked weeks.</p>)}
-        {selectedRun && sessionDates.length > 0 && !selectedSessionDate && sessionDates.map((date) => { const session = getSession(selectedRun.id, date); const count = session.signups.length; const full = count >= selectedRun.rosterLimit; return (<div key={date} className="session-row" onClick={() => setSelectedSessionDate(date)}><div><span className="font-medium">{fmt(date)}</span><span className="text-sm text-muted" style={{marginLeft:8}}>{fmtTime(selectedRun.startTime)}–{fmtTime(selectedRun.endTime)}</span></div><div style={{display:'flex', gap:'6px', alignItems:'center'}}>{session.cancelled && <span className="badge badge-red">Cancelled</span>}<span className={`badge ${full ? "badge-red" : "badge-green"}`}>{count}/{selectedRun.rosterLimit}</span>{session.waitlist.length > 0 && <span className="badge badge-yellow">{session.waitlist.length} waitlisted</span>}</div></div>); })}
-        {selectedRun && selectedSessionDate && (<SessionDetail run={selectedRun} date={selectedSessionDate} session={getSession(selectedRun.id, selectedSessionDate)} updateSession={(updater) => updateSession(selectedRun.id, selectedSessionDate, updater)} onBack={() => setSelectedSessionDate(null)} />)}
-      </div>);
-        }
-    function SessionDetail({ run, date, session, updateSession, onBack }) {
-      const [diFirst, setDiFirst] = useState("");
-      const [diLast, setDiLast] = useState("");
-      const rosterFull = session.signups.length >= run.rosterLimit;
-      const addDropIn = () => { if (!diFirst.trim() || !diLast.trim()) return; const player = { playerId: uid(), firstName: diFirst.trim(), lastName: diLast.trim(), type: "dropin", paid: false, signupTime: new Date().toISOString() }; if (rosterFull) { updateSession((s) => ({ ...s, waitlist: [...s.waitlist, player] })); } else { updateSession((s) => ({ ...s, signups: [...s.signups, player] })); } setDiFirst(""); setDiLast(""); };
-      const togglePaid = (pid) => updateSession((s) => ({ ...s, signups: s.signups.map((p) => p.playerId === pid ? { ...p, paid: !p.paid } : p) }));
-      const removeSignup = (pid) => updateSession((s) => { const newSignups = s.signups.filter((p) => p.playerId !== pid); let newWaitlist = [...s.waitlist]; if (newSignups.length < run.rosterLimit && newWaitlist.length > 0) { newSignups.push(newWaitlist.shift()); } return { ...s, signups: newSignups, waitlist: newWaitlist }; });
-      const removeWaitlist = (pid) => updateSession((s) => ({ ...s, waitlist: s.waitlist.filter((p) => p.playerId !== pid) }));
-      const promoteWaitlist = (pid) => { if (rosterFull) return; updateSession((s) => { const player = s.waitlist.find((p) => p.playerId === pid); if (!player) return s; return { ...s, signups: [...s.signups, player], waitlist: s.waitlist.filter((p) => p.playerId !== pid) }; }); };
-      const toggleCancel = () => updateSession((s) => ({ ...s, cancelled: !s.cancelled }));
-      return (<div>
-        <button className="link-btn mb-3" onClick={onBack}>← Back to sessions</button>
-        <div className="card"><div className="flex-between"><div><div className="font-semibold">{run.name} — {fmt(date)}</div><div className="text-sm text-muted mt-1">{fmtTime(run.startTime)}–{fmtTime(run.endTime)} @ {run.location}</div></div><div style={{display:'flex', gap:'8px', alignItems:'center'}}><span className={`badge ${rosterFull ? "badge-red" : "badge-green"}`}>{session.signups.length}/{run.rosterLimit}</span>{session.cancelled && <span className="badge badge-red">CANCELLED</span>}<button className={`btn btn-sm ${session.cancelled ? "btn-success" : "btn-danger"}`} onClick={toggleCancel}>{session.cancelled ? "Reinstate" : "Cancel Session"}</button></div></div><div className="border-t mt-3" style={{display:'flex', gap:'16px'}}><span className="text-xs text-gray">Drop-in fee: <strong>${run.dropInFee}</strong></span><span className="text-xs text-gray">List opens: <strong>{run.listOpensHoursBefore}h before</strong></span><span className="text-xs text-gray">Payment deadline: <strong>{run.paymentDeadlineHoursBefore}h before</strong></span></div></div>
-        {!session.cancelled && (<div className="card"><label className="form-label mb-2">Add Drop-In Player</label><div className="flex-row"><input className="form-input" placeholder="First name" value={diFirst} onChange={(e) => setDiFirst(e.target.value)} /><input className="form-input" placeholder="Last name" value={diLast} onChange={(e) => setDiLast(e.target.value)} /><button className={`btn ${rosterFull ? "btn-secondary" : "btn-primary"}`} onClick={addDropIn}>{rosterFull ? "Add to Waitlist" : "Add to Roster"}</button></div>{rosterFull && <p className="text-xs mt-1" style={{color:'#d97706'}}>Roster is full. New players go to the waitlist.</p>}</div>)}
-        <div className="card"><h4 className="font-semibold text-sm text-gray mb-2">Roster ({session.signups.length}/{run.rosterLimit})</h4>{session.signups.length === 0 ? (<p className="text-sm text-muted">No players signed up yet.</p>) : (<table><thead><tr><th>#</th><th>Name</th><th>ID</th><th className="center">Type</th><th className="center">Paid</th><th className="right"></th></tr></thead><tbody>{session.signups.map((p, i) => (<tr key={p.playerId}><td className="text-muted">{i + 1}</td><td className="font-medium">{p.firstName} {p.lastName}</td><td className="text-xs text-muted font-mono">{p.playerId}</td><td className="center"><span className={`badge ${p.type === "fulltime" ? "badge-blue" : "badge-purple"}`}>{p.type === "fulltime" ? "Full-Time" : "Drop-In"}</span></td><td className="center"><span className={`check-box ${p.paid ? "checked" : ""}`} onClick={() => togglePaid(p.playerId)}>{p.paid && "✓"}</span></td><td className="right"><button className="link-btn red" onClick={() => removeSignup(p.playerId)}>Remove</button></td></tr>))}</tbody></table>)}</div>
-        <div className="card"><h4 className="font-semibold text-sm text-gray mb-2">Waitlist ({session.waitlist.length})</h4>{session.waitlist.length === 0 ? (<p className="text-sm text-muted">No one on the waitlist.</p>) : (<table><thead><tr><th>#</th><th>Name</th><th>ID</th><th className="right"></th></tr></thead><tbody>{session.waitlist.map((p, i) => (<tr key={p.playerId}><td className="text-muted">{i + 1}</td><td className="font-medium">{p.firstName} {p.lastName}</td><td className="text-xs text-muted font-mono">{p.playerId}</td><td className="right" style={{display:'flex', gap:'8px', justifyContent:'flex-end'}}>{!rosterFull && <button className="link-btn green" onClick={() => promoteWaitlist(p.playerId)}>Promote</button>}<button className="link-btn red" onClick={() => removeWaitlist(p.playerId)}>Remove</button></td></tr>))}</tbody></table>)}</div>
-      </div>);
-                                                                                                                                }
-    function PlayerSignUp({ runs, playerRunId, setPlayerRunId, playerSessionDate, setPlayerSessionDate, getSession, updateSession }) {
-      const [firstName, setFirstName] = useState("");
-      const [lastName, setLastName] = useState("");
-      const [successMsg, setSuccessMsg] = useState("");
-      const selectedRun = runs.find((r) => r.id === playerRunId);
-      const sessionDates = selectedRun ? generateSessionDates(selectedRun) : [];
-      const today = new Date().toISOString().split("T")[0];
-      const upcomingDates = sessionDates.filter((d) => d >= today);
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useCallback } = React;
 
-      const handleSignUp = () => {
-        if (!firstName.trim() || !lastName.trim() || !selectedRun || !playerSessionDate) return;
-        const session = getSession(selectedRun.id, playerSessionDate);
-        if (session.cancelled) return;
-        const alreadySignedUp = session.signups.some((p) => p.firstName.toLowerCase() === firstName.trim().toLowerCase() && p.lastName.toLowerCase() === lastName.trim().toLowerCase());
-        const alreadyWaitlisted = session.waitlist.some((p) => p.firstName.toLowerCase() === firstName.trim().toLowerCase() && p.lastName.toLowerCase() === lastName.trim().toLowerCase());
-        if (alreadySignedUp || alreadyWaitlisted) { setSuccessMsg("You're already signed up for this session!"); setTimeout(() => setSuccessMsg(""), 3000); return; }
-        const rosterFull = session.signups.length >= selectedRun.rosterLimit;
-        const player = { playerId: uid(), firstName: firstName.trim(), lastName: lastName.trim(), type: "dropin", paid: false, signupTime: new Date().toISOString() };
-        if (rosterFull) {
-          updateSession(selectedRun.id, playerSessionDate, (s) => ({ ...s, waitlist: [...s.waitlist, player] }));
-          setSuccessMsg(`${firstName.trim()}, you've been added to the waitlist (position #${session.waitlist.length + 1}). We'll let you know if a spot opens up!`);
-        } else {
-          updateSession(selectedRun.id, playerSessionDate, (s) => ({ ...s, signups: [...s.signups, player] }));
-          setSuccessMsg(`${firstName.trim()}, you're signed up! You're #${session.signups.length + 1} on the roster.`);
-        }
-        setFirstName(""); setLastName("");
-        setTimeout(() => setSuccessMsg(""), 5000);
-      };
+/* helpers */
+const uid = () => Math.random().toString(36).slice(2, 10);
+const fmt = d => { const dt = new Date(d + 'T12:00:00'); return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }); };
+const fmtShort = d => { const dt = new Date(d + 'T12:00:00'); return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); };
+const fmtTime = t => { if (!t) return ''; const [h,m] = t.split(':'); const hr = parseInt(h); return `${hr > 12 ? hr-12 : hr || 12}:${m} ${hr >= 12 ? 'PM' : 'AM'}`; };
+const dayName = d => ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d];
 
-      return (<div>
-        <h2 className="font-semibold text-gray mb-3">Player Sign Up</h2>
-        {runs.length === 0 && <div className="empty"><p>No runs available yet</p><p>Check back later for open sessions.</p></div>}
-        {runs.length > 0 && (<div className="form-group mb-4"><label className="form-label">Select a Run</label><select className="form-select" value={playerRunId || ""} onChange={(e) => { setPlayerRunId(e.target.value || null); setPlayerSessionDate(null); setSuccessMsg(""); }}><option value="">— Choose a run —</option>{runs.map((r) => <option key={r.id} value={r.id}>{r.name} ({r.dayOfWeek}s @ {r.location})</option>)}</select></div>)}
-        {selectedRun && (<div className="card mb-4"><div className="font-semibold">{selectedRun.name}</div><div className="text-sm text-muted mt-1">{selectedRun.dayOfWeek}s · {fmtTime(selectedRun.startTime)}–{fmtTime(selectedRun.endTime)} · {selectedRun.location}</div><div className="flex-wrap mt-2"><span className="badge badge-blue">Max {selectedRun.rosterLimit} players</span><span className="badge badge-green">Drop-in: ${selectedRun.dropInFee}</span></div></div>)}
-        {selectedRun && upcomingDates.length === 0 && (<p className="text-sm text-muted">No upcoming sessions for this run.</p>)}
-        {selectedRun && upcomingDates.length > 0 && !playerSessionDate && (<div><label className="form-label mb-2">Upcoming Sessions</label>{upcomingDates.map((date) => { const session = getSession(selectedRun.id, date); const count = session.signups.length; const full = count >= selectedRun.rosterLimit; return (<div key={date} className={`session-row ${session.cancelled ? "opacity-50" : ""}`} onClick={() => !session.cancelled && setPlayerSessionDate(date)} style={session.cancelled ? {cursor:'not-allowed', opacity:0.5} : {}}><div><span className="font-medium">{fmt(date)}</span><span className="text-sm text-muted" style={{marginLeft:8}}>{fmtTime(selectedRun.startTime)}–{fmtTime(selectedRun.endTime)}</span></div><div style={{display:'flex', gap:'6px', alignItems:'center'}}>{session.cancelled ? <span className="badge badge-red">Cancelled</span> : <span className={`badge ${full ? "badge-red" : "badge-green"}`}>{full ? "Full" : `${count}/${selectedRun.rosterLimit} spots`}</span>}{!session.cancelled && session.waitlist.length > 0 && <span className="badge badge-yellow">{session.waitlist.length} waiting</span>}</div></div>); })}</div>)}
-        {selectedRun && playerSessionDate && (() => { const session = getSession(selectedRun.id, playerSessionDate); const rosterFull = session.signups.length >= selectedRun.rosterLimit; return (<div>
-          <button className="link-btn mb-3" onClick={() => { setPlayerSessionDate(null); setSuccessMsg(""); }}>← Back to sessions</button>
-          <div className="card"><div className="flex-between"><div><div className="font-semibold">{fmt(playerSessionDate)}</div><div className="text-sm text-muted mt-1">{fmtTime(selectedRun.startTime)}–{fmtTime(selectedRun.endTime)} @ {selectedRun.location}</div></div><span className={`badge ${rosterFull ? "badge-red" : "badge-green"}`}>{session.signups.length}/{selectedRun.rosterLimit}</span></div></div>
-          {successMsg && <div className="success-msg">{successMsg}</div>}
-          <div className="card"><h4 className="font-semibold text-sm text-gray mb-3">Sign Up for This Session</h4><div className="flex-row"><input className="form-input" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} /><input className="form-input" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} /><button className={`btn ${rosterFull ? "btn-secondary" : "btn-primary"}`} onClick={handleSignUp} disabled={!firstName.trim() || !lastName.trim()}>{rosterFull ? "Join Waitlist" : "Sign Me Up"}</button></div>{rosterFull && <p className="text-xs mt-2" style={{color:'#d97706'}}>Roster is full — you'll be added to the waitlist.</p>}</div>
-          <div className="card"><h4 className="font-semibold text-sm text-gray mb-2">Current Roster ({session.signups.length}/{selectedRun.rosterLimit})</h4>{session.signups.length === 0 ? (<p className="text-sm text-muted">No one signed up yet. Be the first!</p>) : (<div>{session.signups.map((p, i) => (<div key={p.playerId} className="player-roster-item"><div><span className="text-muted text-sm" style={{marginRight:8}}>{i + 1}.</span><span className="font-medium">{p.firstName} {p.lastName}</span></div><span className={`badge ${p.type === "fulltime" ? "badge-blue" : "badge-purple"}`}>{p.type === "fulltime" ? "Full-Time" : "Drop-In"}</span></div>))}</div>)}</div>
-          {session.waitlist.length > 0 && (<div className="card"><h4 className="font-semibold text-sm text-gray mb-2">Waitlist ({session.waitlist.length})</h4>{session.waitlist.map((p, i) => (<div key={p.playerId} className="player-roster-item"><div><span className="text-muted text-sm" style={{marginRight:8}}>{i + 1}.</span><span className="font-medium">{p.firstName} {p.lastName}</span></div><span className="badge badge-yellow">Waiting</span></div>))}</div>)}
-        </div>); })()}
-      </div>);
-    }
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
+function generateSessionDates(run) {
+  if (!run.seasonStart || !run.seasonEnd) return [];
+  const dates = []; const end = new Date(run.seasonEnd + 'T12:00:00');
+  let cur = new Date(run.seasonStart + 'T12:00:00');
+  const targetDay = run.dayOfWeek != null ? run.dayOfWeek : cur.getDay();
+  while (cur.getDay() !== targetDay) cur.setDate(cur.getDate() + 1);
+  while (cur <= end) {
+    const ds = cur.toISOString().split('T')[0];
+    if (!(run.blockedWeeks || []).includes(ds)) dates.push(ds);
+    cur.setDate(cur.getDate() + 7);
+  }
+  return dates;
+}
+
+function getUpcomingDates(run) {
+  const today = new Date().toISOString().split('T')[0];
+  return generateSessionDates(run).filter(d => d >= today);
+}
+
+function App() {
+  const [view, setView] = useState('player');
+  const [adminPass, setAdminPass] = useState('');
+  const [adminError, setAdminError] = useState('');
+  const [adminTab, setAdminTab] = useState('runs');
+  const [runs, setRuns] = useState([]);
+  const [sessions, setSessions] = useState({});
+  const [editingRun, setEditingRun] = useState(null);
+  const [selectedSession, setSelectedSession] = useState(null);
+
+  const ADMIN_PASSWORD = 'hoops2026';
+
+  const getSession = useCallback((runId, date) => {
+    const key = `${runId}_${date}`;
+    const run = runs.find(r => r.id === runId);
+    if (!run) return { signups: [], waitlist: [], cancelled: [] };
+    const base = sessions[key] || { signups: [], waitlist: [], cancelled: [] };
+    const ftPlayers = (run.fullTimePlayers || []).filter(ft =>
+      !base.signups.some(s => s.playerId === ft.id) &&
+      !base.cancelled.some(c => c === ft.id)
+    ).map(ft => ({ playerId: ft.id, firstName: ft.firstName, lastName: ft.lastName, type: 'fulltime', paid: true, signupTime: ft.addedAt || new Date().toISOString() }));
+    return { ...base, signups: [...ftPlayers, ...base.signups], waitlist: base.waitlist || [], cancelled: base.cancelled || [] };
+  }, [runs, sessions]);
+
+  const updateSession = useCallback((runId, date, updater) => {
+    const key = `${runId}_${date}`;
+    setSessions(prev => {
+      const current = prev[key] || { signups: [], waitlist: [], cancelled: [] };
+      return { ...prev, [key]: updater(current) };
+    });
+  }, []);
+
+  const stats = useMemo(() => {
+    let totalHours = 0; let totalSessions = 0;
+    const playerSet = new Set();
+    runs.forEach(run => {
+      const allDates = generateSessionDates(run);
+      const today = new Date().toISOString().split('T')[0];
+      const pastDates = allDates.filter(d => d < today);
+      pastDates.forEach(date => {
+        const sess = getSession(run.id, date);
+
+        const activeCount = sess.signups.length;
+        if (activeCount > 0) {
+          totalSessions++;
+          const durationHrs = run.duration ? run.duration / 60 : 1.5;
+          totalHours += activeCount * durationHrs;
+          sess.signups.forEach(s => playerSet.add(s.firstName + ' ' + s.lastName));
+        }
+      });
+    });
+    return { totalHours: Math.round(totalHours * 10) / 10, totalSessions, uniquePlayers: playerSet.size };
+  }, [runs, sessions, getSession]);
+
+  const handleLogin = () => {
+    if (adminPass === ADMIN_PASSWORD) { setView('admin'); setAdminError(''); }
+    else setAdminError('Incorrect password');
+  };
+
+  /* PLAYER VIEW */
+  const PlayerView = () => (
+    <div>
+      <div className="stats-bar">
+        <div className="stat-card orange"><div className="stat-label">Total Hours Played</div><div className="stat-value">{stats.totalHours}</div><div className="stat-sub">across all sessions</div></div>
+        <div className="stat-card blue"><div className="stat-label">Sessions Completed</div><div className="stat-value">{stats.totalSessions}</div><div className="stat-sub">games played</div></div>
+        <div className="stat-card green"><div className="stat-label">Active Runs</div><div className="stat-value">{runs.length}</div><div className="stat-sub">gym rentals</div></div>
+        <div className="stat-card purple"><div className="stat-label">Unique Players</div><div className="stat-value">{stats.uniquePlayers}</div><div className="stat-sub">ballers</div></div>
+      </div>
+      <div className="section-title"><span className="icon">🏀</span> Upcoming Sessions</div>
+      {runs.length === 0 && <div className="empty"><div className="icon">🏟️</div><p>No runs available yet. Check back soon!</p></div>}
+      <div className="runs-grid">
+        {runs.map(run => <PlayerRunCard key={run.id} run={run} getSession={getSession} updateSession={updateSession} />)}
+      </div>
+    </div>
+  );
+
+  const PlayerRunCard = ({ run, getSession, updateSession }) => {
+    const [signupState, setSignupState] = useState({});
+    const [messages, setMessages] = useState({});
+    const upcomingDates = getUpcomingDates(run);
+
+    const handleSignup = (date) => {
+      const names = signupState[date] || {};
+      const firstName = (names.firstName || '').trim();
+      const lastName = (names.lastName || '').trim();
+      if (!firstName || !lastName) return;
+      const session = getSession(run.id, date);
+      const alreadyOn = session.signups.some(p => p.firstName.toLowerCase() === firstName.toLowerCase() && p.lastName.toLowerCase() === lastName.toLowerCase());
+      const alreadyWait = (session.waitlist || []).some(p => p.firstName.toLowerCase() === firstName.toLowerCase() && p.lastName.toLowerCase() === lastName.toLowerCase());
+      if (alreadyOn || alreadyWait) {
+        setMessages(m => ({ ...m, [date]: { type: 'warning', text: "You're already signed up for this session!" } }));
+        setTimeout(() => setMessages(m => ({ ...m, [date]: null })), 3000);
+        return;
+      }
+      const rosterFull = session.signups.length >= (run.rosterLimit || 99);
+      const player = { playerId: uid(), firstName, lastName, type: 'dropin', paid: false, signupTime: new Date().toISOString() };
+      if (rosterFull) {
+        updateSession(run.id, date, s => ({ ...s, waitlist: [...(s.waitlist || []), player] }));
+        setMessages(m => ({ ...m, [date]: { type: 'warning', text: `Roster full! You're on the waitlist.` } }));
+      } else {
+        updateSession(run.id, date, s => ({ ...s, signups: [...s.signups, player] }));
+        setMessages(m => ({ ...m, [date]: { type: 'success', text: `You're in! Spot #${session.signups.length + 1} secured.` } }));
+      }
+      setSignupState(s => ({ ...s, [date]: { firstName: '', lastName: '' } }));
+      setTimeout(() => setMessages(m => ({ ...m, [date]: null })), 4000);
+    };
+
+    if (upcomingDates.length === 0) return null;
+    return (
+      <div className="run-section">
+        <div className="run-header">
+          <div><div className="run-name">{run.name}</div></div>
+          <div className="run-meta">
+            <span className="run-meta-item"><span className="dot dot-orange"></span>{run.location || 'TBD'}</span>
+            <span className="run-meta-item"><span className="dot dot-blue"></span>{run.dayOfWeek != null ? dayName(run.dayOfWeek) + 's' : 'TBD'}</span>
+            <span className="run-meta-item"><span className="dot dot-green"></span>{run.startTime ? fmtTime(run.startTime) : 'TBD'}{run.duration ? ` · ${run.duration}min` : ''}</span>
+          </div>
+        </div>
+        <div className="sessions-list">
+          {upcomingDates.map(date => {
+            const session = getSession(run.id, date);
+            const limit = run.rosterLimit || 99;
+            const spotsLeft = Math.max(0, limit - session.signups.length);
+            const names = signupState[date] || {};
+            const msg = messages[date];
+            return (
+              <div key={date}>
+                {msg && <div className={`msg msg-${msg.type}`}>{msg.text}</div>}
+                <div className="session-row">
+                  <div className="session-date">{fmtShort(date)}</div>
+                  <div className="session-spots">
+                    <span className="count">{session.signups.length}</span>/{limit} spots
+                    {spotsLeft > 0 ? <span style={{color:'#34d399'}}> · {spotsLeft} open</span> : <span style={{color:'#f87171'}}> · Full</span>}
+                    {(session.waitlist||[]).length > 0 && <span> · {session.waitlist.length} waitlisted</span>}
+                  </div>
+                  <div className="signup-inline">
+                    <input className="input input-sm" placeholder="First" value={names.firstName || ''} onChange={e => setSignupState(s => ({ ...s, [date]: { ...s[date], firstName: e.target.value } }))} />
+                    <input className="input input-sm" placeholder="Last" value={names.lastName || ''} onChange={e => setSignupState(s => ({ ...s, [date]: { ...s[date], lastName: e.target.value } }))} onKeyDown={e => e.key === 'Enter' && handleSignup(date)} />
+                    <button className="btn btn-primary btn-sm" onClick={() => handleSignup(date)}>Sign Up</button>
+                  </div>
+                </div>
+                {session.signups.length > 0 && <SessionRoster session={session} />}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const SessionRoster = ({ session }) => {
+    const [expanded, setExpanded] = useState(false);
+    return (
+      <div className="player-roster">
+        <div className="expandable-header" onClick={() => setExpanded(!expanded)}>
+          <span className={`expand-arrow ${expanded ? 'open' : ''}`}>▶</span>
+          <h5 style={{margin:0}}>Current Roster ({session.signups.length})</h5>
+        </div>
+        {expanded && (
+          <div className="player-roster-list" style={{marginTop: 8}}>
+            {session.signups.map((p, i) => (
+              <span key={i} className={`player-chip ${p.type === 'fulltime' ? 'fulltime' : ''} ${p.paid ? 'paid' : ''}`}>
+                {p.firstName} {p.lastName}{p.type === 'fulltime' && ' ★'}{p.paid && ' ✓'}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  /* ADMIN LOGIN */
+  const AdminLogin = () => (
+    <div className="login-box">
+      <div style={{fontSize: 48, marginBottom: 16}}>🔒</div>
+      <h2>Admin Access</h2>
+      <p>Enter the admin password to manage runs and sessions.</p>
+      {adminError && <div className="msg msg-error">{adminError}</div>}
+      <input className="input" type="password" placeholder="Password" value={adminPass} onChange={e => { setAdminPass(e.target.value); setAdminError(''); }} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+      <button className="btn btn-primary" style={{width:'100%', padding:'12px', marginTop: 8}} onClick={handleLogin}>Log In</button>
+    </div>
+  );
+
+  /* ADMIN: RUNS TAB */
+  const AdminRunsTab = () => (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 20}}>
+        <h3 style={{color:'#f1f5f9', fontSize: 18, fontWeight: 700}}>Manage Runs</h3>
+        <button className="btn btn-primary" onClick={() => setEditingRun({ id: uid(), name: '', location: '', dayOfWeek: 4, startTime: '20:00', duration: 90, seasonStart: '', seasonEnd: '', rosterLimit: 15, dropInFee: 15, seasonFee: 150, fullTimePlayers: [], blockedWeeks: [] })}>+ New Run</button>
+      </div>
+      {editingRun && <RunForm run={editingRun} onSave={r => { setRuns(prev => prev.some(x => x.id === r.id) ? prev.map(x => x.id === r.id ? r : x) : [...prev, r]); setEditingRun(null); }} onCancel={() => setEditingRun(null)} />}
+      {runs.length === 0 && !editingRun && <div className="empty"><div className="icon">📋</div><p>No runs yet. Create your first run to get started.</p></div>}
+      {runs.map(run => (
+        <div key={run.id} className="card">
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap: 12}}>
+            <div>
+              <div className="card-title" style={{marginBottom: 4}}>{run.name}</div>
+              <div style={{display:'flex', gap: 12, flexWrap:'wrap', fontSize: 13, color: '#94a3b8'}}>
+                <span>{run.location}</span><span>{run.dayOfWeek != null ? dayName(run.dayOfWeek) + 's' : ''}</span><span>{fmtTime(run.startTime)} · {run.duration}min</span><span>Roster: {run.rosterLimit}</span>
+              </div>
+              <div style={{display:'flex', gap: 6, marginTop: 8, flexWrap: 'wrap'}}>
+                <span className="badge badge-orange">Season: {run.seasonStart ? fmt(run.seasonStart) : '?'} — {run.seasonEnd ? fmt(run.seasonEnd) : '?'}</span>
+                <span className="badge badge-blue">{(run.fullTimePlayers||[]).length} full-time</span>
+                <span className="badge badge-green">{generateSessionDates(run).length} sessions</span>
+              </div>
+            </div>
+            <div style={{display:'flex', gap: 8}}>
+              <button className="btn btn-secondary btn-sm" onClick={() => setEditingRun({...run})}>Edit</button>
+              <button className="btn btn-danger btn-sm" onClick={() => setRuns(prev => prev.filter(r => r.id !== run.id))}>Delete</button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  /* RUN FORM */
+  const RunForm = ({ run, onSave, onCancel }) => {
+    const [form, setForm] = useState(run);
+    const [newFT, setNewFT] = useState({ firstName: '', lastName: '' });
+    const [newBlocked, setNewBlocked] = useState('');
+    const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+    return (
+      <div className="card" style={{borderColor:'rgba(249,115,22,0.2)'}}>
+        <div className="card-title">{runs.some(r => r.id === form.id) ? 'Edit Run' : 'New Run'}</div>
+        <div className="form-grid">
+          <div className="form-group"><label className="label">Run Name</label><input className="input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Thursday at Knoxdale" /></div>
+          <div className="form-group"><label className="label">Location</label><input className="input" value={form.location} onChange={e => set('location', e.target.value)} placeholder="e.g. Knoxdale Community Centre" /></div>
+          <div className="form-group"><label className="label">Day of Week</label><select className="input" value={form.dayOfWeek} onChange={e => set('dayOfWeek', parseInt(e.target.value))}>{[0,1,2,3,4,5,6].map(d => <option key={d} value={d}>{dayName(d)}</option>)}</select></div>
+          <div className="form-group"><label className="label">Start Time</label><input className="input" type="time" value={form.startTime} onChange={e => set('startTime', e.target.value)} /></div>
+          <div className="form-group"><label className="label">Duration (min)</label><input className="input" type="number" value={form.duration} onChange={e => set('duration', parseInt(e.target.value) || 0)} /></div>
+          <div className="form-group"><label className="label">Roster Limit</label><input className="input" type="number" value={form.rosterLimit} onChange={e => set('rosterLimit', parseInt(e.target.value) || 0)} /></div>
+          <div className="form-group"><label className="label">Season Start</label><input className="input" type="date" value={form.seasonStart} onChange={e => set('seasonStart', e.target.value)} /></div>
+          <div className="form-group"><label className="label">Season End</label><input className="input" type="date" value={form.seasonEnd} onChange={e => set('seasonEnd', e.target.value)} /></div>
+          <div className="form-group"><label className="label">Drop-in Fee ($)</label><input className="input" type="number" value={form.dropInFee} onChange={e => set('dropInFee', parseFloat(e.target.value) || 0)} /></div>
+          <div className="form-group"><label className="label">Season Fee ($)</label><input className="input" type="number" value={form.seasonFee} onChange={e => set('seasonFee', parseFloat(e.target.value) || 0)} /></div>
+          <div className="form-group full">
+            <label className="label">Blocked Weeks (Holidays)</label>
+            <div style={{display:'flex', gap: 8, alignItems:'center'}}>
+              <input className="input" type="date" value={newBlocked} onChange={e => setNewBlocked(e.target.value)} style={{width: 200}} />
+              <button className="btn btn-secondary btn-sm" onClick={() => { if (newBlocked && !(form.blockedWeeks||[]).includes(newBlocked)) { set('blockedWeeks', [...(form.blockedWeeks||[]), newBlocked]); setNewBlocked(''); } }}>Block</button>
+            </div>
+            <div className="blocked-weeks">
+              {(form.blockedWeeks||[]).map(w => (<div key={w} className="blocked-week">{fmtShort(w)}<button onClick={() => set('blockedWeeks', (form.blockedWeeks||[]).filter(x=>x!==w))}>×</button></div>))}
+            </div>
+          </div>
+          <div className="form-group full">
+            <label className="label">Full-Time Players</label>
+            <div style={{display:'flex', gap: 8, alignItems:'center', marginBottom: 8}}>
+              <input className="input input-sm" placeholder="First" value={newFT.firstName} onChange={e => setNewFT(n => ({...n, firstName: e.target.value}))} style={{width: 140}} />
+              <input className="input input-sm" placeholder="Last" value={newFT.lastName} onChange={e => setNewFT(n => ({...n, lastName: e.target.value}))} style={{width: 140}} />
+              <button className="btn btn-success btn-sm" onClick={() => { if (newFT.firstName.trim() && newFT.lastName.trim()) { set('fullTimePlayers', [...(form.fullTimePlayers||[]), { id: uid(), firstName: newFT.firstName.trim(), lastName: newFT.lastName.trim(), addedAt: new Date().toISOString() }]); setNewFT({ firstName: '', lastName: '' }); } }}>Add</button>
+            </div>
+            {(form.fullTimePlayers||[]).map(ft => (
+              <div key={ft.id} className="ft-player-row">
+                <span style={{flex:1, fontSize: 14, color: '#e2e8f0'}}>{ft.firstName} {ft.lastName}</span>
+                <span className="badge badge-orange">Full-time</span>
+                <button className="btn btn-danger btn-sm" style={{padding:'4px 8px'}} onClick={() => set('fullTimePlayers', (form.fullTimePlayers||[]).filter(x=>x.id!==ft.id))}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{display:'flex', gap: 8, marginTop: 20}}>
+          <button className="btn btn-primary" onClick={() => onSave(form)}>Save Run</button>
+          <button className="btn btn-ghost" onClick={onCancel}>Cancel</button>
+        </div>
+      </div>
+    );
+  };
+
+  /* ADMIN: SESSIONS TAB */
+  const AdminSessionsTab = () => {
+    if (selectedSession) return <AdminSessionDetail runId={selectedSession.runId} date={selectedSession.date} onBack={() => setSelectedSession(null)} />;
+    return (
+      <div>
+        <h3 style={{color:'#f1f5f9', fontSize: 18, fontWeight: 700, marginBottom: 20}}>Sessions Overview</h3>
+        {runs.length === 0 && <div className="empty"><div className="icon">📅</div><p>Create a run first to see sessions.</p></div>}
+        {runs.map(run => {
+          const allDates = generateSessionDates(run);
+          return (
+            <div key={run.id} className="card">
+              <div className="card-title">{run.name} <span className="badge badge-gray" style={{marginLeft: 8}}>{allDates.length} sessions</span></div>
+              <div className="roster-list">
+                {allDates.map(date => {
+                  const sess = getSession(run.id, date);
+                  const past = date < new Date().toISOString().split('T')[0];
+                  return (
+                    <div key={date} className="roster-item" style={{cursor:'pointer', opacity: past ? 0.5 : 1}} onClick={() => setSelectedSession({runId: run.id, date})}>
+                      <div><span className="player-name">{fmtShort(date)}</span>{past && <span className="badge badge-gray" style={{marginLeft: 8}}>Past</span>}</div>
+                      <div style={{display:'flex', gap: 8, alignItems:'center'}}>
+                        <span className="badge badge-blue">{sess.signups.length}/{run.rosterLimit || '∞'}</span>
+                        {(sess.waitlist||[]).length > 0 && <span className="badge badge-orange">{sess.waitlist.length} waitlisted</span>}
+                        <span style={{color:'#64748b', fontSize: 12}}>▶</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  /* ADMIN: SESSION DETAIL */
+  const AdminSessionDetail = ({ runId, date, onBack }) => {
+    const run = runs.find(r => r.id === runId);
+    const session = getSession(runId, date);
+    const [addFirst, setAddFirst] = useState('');
+    const [addLast, setAddLast] = useState('');
+    if (!run) return <div>Run not found</div>;
+    const togglePaid = (playerId) => { updateSession(runId, date, s => ({ ...s, signups: s.signups.map(p => p.playerId === playerId ? { ...p, paid: !p.paid } : p) })); };
+    const removePlayer = (playerId) => {
+      updateSession(runId, date, s => {
+        const newSignups = s.signups.filter(p => p.playerId !== playerId);
+        let newWaitlist = [...(s.waitlist || [])];
+        if (newWaitlist.length > 0 && newSignups.length < (run.rosterLimit || 99)) { const promoted = newWaitlist.shift(); newSignups.push(promoted); }
+        return { ...s, signups: newSignups, waitlist: newWaitlist };
+      });
+    };
+    const addDropIn = () => {
+      if (!addFirst.trim() || !addLast.trim()) return;
+      const player = { playerId: uid(), firstName: addFirst.trim(), lastName: addLast.trim(), type: 'dropin', paid: false, signupTime: new Date().toISOString() };
+      if (session.signups.length >= (run.rosterLimit || 99)) { updateSession(runId, date, s => ({ ...s, waitlist: [...(s.waitlist || []), player] })); }
+      else { updateSession(runId, date, s => ({ ...s, signups: [...s.signups, player] })); }
+      setAddFirst(''); setAddLast('');
+    };
+    const removeFromWaitlist = (playerId) => { updateSession(runId, date, s => ({ ...s, waitlist: (s.waitlist||[]).filter(p => p.playerId !== playerId) })); };
+    const paidCount = session.signups.filter(p => p.paid).length;
+    const unpaidCount = session.signups.length - paidCount;
+    return (
+      <div>
+        <div className="back-btn" onClick={onBack}>← Back to sessions</div>
+        <div className="card">
+          <div style={{display:'flex', justifyContent:'space-between', flexWrap:'wrap', gap: 12, marginBottom: 20}}>
+            <div>
+              <div className="card-title" style={{marginBottom: 4}}>{run.name}</div>
+              <div style={{color:'#94a3b8', fontSize: 14}}>{fmt(date)} · {fmtTime(run.startTime)}</div>
+            </div>
+            <div style={{display:'flex', gap: 8}}><span className="badge badge-green">{paidCount} paid</span>{unpaidCount > 0 && <span className="badge badge-red">{unpaidCount} unpaid</span>}</div>
+          </div>
+          <div style={{marginBottom: 16}}>
+            <label className="label">Add Drop-in Player</label>
+            <div style={{display:'flex', gap: 8}}>
+              <input className="input input-sm" placeholder="First" value={addFirst} onChange={e => setAddFirst(e.target.value)} style={{width: 150}} />
+              <input className="input input-sm" placeholder="Last" value={addLast} onChange={e => setAddLast(e.target.value)} style={{width: 150}} onKeyDown={e => e.key === 'Enter' && addDropIn()} />
+              <button className="btn btn-primary btn-sm" onClick={addDropIn}>Add</button>
+            </div>
+          </div>
+          <label className="label">Roster ({session.signups.length}/{run.rosterLimit || '∞'})</label>
+          <div className="roster-list">
+            {session.signups.length === 0 && <div style={{padding: 16, color: '#475569', textAlign: 'center', fontSize: 14}}>No players yet</div>}
+            {session.signups.map((p, i) => (
+              <div key={p.playerId} className="roster-item">
+                <div style={{display:'flex', alignItems:'center', gap: 8}}>
+                  <span style={{color:'#475569', fontSize: 12, width: 20}}>#{i+1}</span>
+                  <span className="player-name">{p.firstName} {p.lastName}</span>
+                  {p.type === 'fulltime' && <span className="badge badge-orange">Full-time</span>}
+                  {p.type === 'dropin' && <span className="badge badge-blue">Drop-in</span>}
+                </div>
+                <div className="player-badges">
+                  <button className={`btn btn-sm ${p.paid ? 'btn-success' : 'btn-danger'}`} onClick={() => togglePaid(p.playerId)}>{p.paid ? '✓ Paid' : '✗ Unpaid'}</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => removePlayer(p.playerId)}>Remove</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {(session.waitlist||[]).length > 0 && (
+            <div className="waitlist-section">
+              <label className="label">Waitlist ({session.waitlist.length})</label>
+              <div className="roster-list">
+                {session.waitlist.map((p, i) => (
+                  <div key={p.playerId} className="roster-item">
+                    <div style={{display:'flex', alignItems:'center', gap: 8}}><span style={{color:'#475569', fontSize: 12, width: 20}}>W{i+1}</span><span className="player-name">{p.firstName} {p.lastName}</span></div>
+                    <button className="btn btn-ghost btn-sm" onClick={() => removeFromWaitlist(p.playerId)}>Remove</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  /* ADMIN: PAYMENTS TAB */
+  const AdminPaymentsTab = () => {
+    const unpaid = [];
+    let totalOwed = 0;
+    runs.forEach(run => {
+      generateSessionDates(run).forEach(date => {
+        const sess = getSession(run.id, date);
+        sess.signups.filter(p => !p.paid).forEach(p => {
+          const fee = p.type === 'fulltime' ? 0 : (run.dropInFee || 0);
+          unpaid.push({ run, date, player: p, fee });
+          totalOwed += fee;
+        });
+      });
+    });
+    return (
+      <div>
+        <h3 style={{color:'#f1f5f9', fontSize: 18, fontWeight: 700, marginBottom: 20}}>Payment Tracker</h3>
+        <div className="stats-bar" style={{marginBottom: 24}}>
+          <div className="stat-card orange"><div className="stat-label">Unpaid Drop-ins</div><div className="stat-value" style={{color:'#f87171'}}>{unpaid.filter(d => d.player.type === 'dropin').length}</div></div>
+          <div className="stat-card green"><div className="stat-label">Total Outstanding</div><div className="stat-value">${totalOwed}</div></div>
+        </div>
+        {unpaid.length === 0 ? <div className="empty"><div className="icon">💰</div><p>All payments are up to date!</p></div> : (
+          <div className="card"><div className="card-title">Unpaid Players</div>
+            <div className="roster-list">
+              {unpaid.map((d, i) => (
+                <div key={i} className="roster-item">
+                  <div><span className="player-name">{d.player.firstName} {d.player.lastName}</span><span style={{color:'#64748b', fontSize: 12, marginLeft: 8}}>{d.run.name} · {fmtShort(d.date)}</span></div>
+                  <div style={{display:'flex', gap: 8, alignItems:'center'}}><span className="badge badge-red">${d.fee} owed</span><span className="badge badge-gray">{d.player.type}</span></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  /* ADMIN VIEW */
+  const AdminView = () => (
+    <div>
+      <div className="admin-tabs">
+        <button className={`admin-tab ${adminTab==='runs'?'active':''}`} onClick={() => {setAdminTab('runs'); setSelectedSession(null);}}>Runs</button>
+        <button className={`admin-tab ${adminTab==='sessions'?'active':''}`} onClick={() => setAdminTab('sessions')}>Sessions</button>
+        <button className={`admin-tab ${adminTab==='payments'?'active':''}`} onClick={() => setAdminTab('payments')}>Payments</button>
+      </div>
+      {adminTab === 'runs' && <AdminRunsTab />}
+      {adminTab === 'sessions' && <AdminSessionsTab />}
+      {adminTab === 'payments' && <AdminPaymentsTab />}
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="hero">
+        <div className="hero-inner">
+          <div className="logo"><div className="logo-icon">🏀</div><span className="logo-text">Hoops RSVP</span></div>
+          {view === 'player' && <div className="admin-link" onClick={() => setView('admin-login')}>Admin →</div>}
+          {(view === 'admin' || view === 'admin-login') && <div className="admin-link" onClick={() => { setView('player'); setAdminPass(''); }}>← Back to Sign Up</div>}
+        </div>
+      </div>
+      <div className="container">
+        {view === 'player' && <PlayerView />}
+        {view === 'admin-login' && <AdminLogin />}
+        {view === 'admin' && <AdminView />}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
 </body>
 </html>
