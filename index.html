@@ -256,13 +256,7 @@ function App() {
       if (ftNames.has(nk)) return { ...s, type: 'fulltime', paid: true };
       return s;
     });
-    const signedUpNames = new Set(upgradedSignups.map(s => `${s.firstName.toLowerCase()}|${s.lastName.toLowerCase()}`));
-    const cancelledIds = new Set(base.cancelled || []);
-    const ftPlayers = (run.fullTimePlayers || []).filter(ft => {
-      const nk = `${ft.firstName.toLowerCase()}|${ft.lastName.toLowerCase()}`;
-      return !signedUpNames.has(nk) && !cancelledIds.has(ft.id);
-    }).map(ft => ({ playerId: ft.id, firstName: ft.firstName, lastName: ft.lastName, type: 'fulltime', paid: true, signupTime: ft.addedAt || new Date().toISOString() }));
-    return { ...base, signups: [...ftPlayers, ...upgradedSignups], waitlist: base.waitlist || [], cancelled: base.cancelled || [] };
+    return { ...base, signups: upgradedSignups, waitlist: base.waitlist || [], cancelled: base.cancelled || [] };
   }, [runs, sessions]);
 
   const updateSession = useCallback((runId, date, updater) => {
