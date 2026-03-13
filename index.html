@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoops Night RSVP</title>
+<style>
+  :root {
+    --orange: #f97316; --orange-dark: #ea580c; --green: #22c55e; --green-dark: #16a34a;
+    --red: #ef4444; --blue: #3b82f6; --yellow: #eab308; --purple: #8b5cf6;
+    --g50: #f9fafb; --g100: #f3f4f6; --g200: #e5e7eb; --g300: #d1d5db;
+    --g400: #9ca3af; --g500: #6b7280; --g600: #4b5563; --g700: #374151; --g800: #1f2937;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--g100); color: var(--g800); }
+  .container { max-width: 720px; margin: 0 auto; padding: 16px; padding-bottom: 80px; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 20px; border-radius: 8px; border: none; font-size: .95rem; font-weight: 500; cursor: pointer; transition: .15s; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-or { background: var(--orange); color: #fff; } .btn-or:hover:not(:disabled) { background: var(--orange-dark); }
+  .btn-gr { background: var(--green); color: #fff; } .btn-gr:hover:not(:disabled) { background: var(--green-dark); }
+  .btn-rd { background: var(--red); color: #fff; } .btn-rd:hover:not(:disabled) { background: #dc2626; }
+  .btn-bl { background: var(--blue); color: #fff; } .btn-bl:hover:not(:disabled) { background: #2563eb; }
+  .btn-gy { background: var(--g200); color: var(--g700); } .btn-gy:hover:not(:disabled) { background: var(--g300); }
+  .btn-sm { padding: 6px 12px; font-size: .85rem; }
+  .btn-xs { padding: 4px 10px; font-size: .8rem; border-radius: 6px; }
+  .btn-out { background: transparent; border: 1.5px solid var(--g300); color: var(--g600); }
+  input, select { width: 100%; padding: 10px 12px; border: 1.5px solid var(--g300); border-radius: 8px; font-size: .95rem; font-family: inherit; }
+  input:focus, select:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(249,115,22,.1); }
+  label { display: block; font-size: .85rem; font-weight: 500; color: var(--g600); margin-bottom: 4px; }
+  .fg { margin-bottom: 14px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .75rem; font-weight: 600; }
+  .b-gr { background: #dcfce7; color: #166534; } .b-or { background: #fff7ed; color: #9a3412; }
+  .b-yl { background: #fef9c3; color: #854d0e; } .b-rd { background: #fef2f2; color: #991b1b; }
+  .b-pu { background: #f3e8ff; color: #6b21a8; } .b-gy { background: var(--g100); color: var(--g600); }
+  h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 12px; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 8px; }
+  .header { background: var(--orange); color: #fff; padding: 16px; text-align: center; }
+  .header h1 { color: #fff; font-size: 1.4rem; font-weight: 700; }
+  .header p { opacity: .9; font-size: .9rem; margin-top: 4px; }
+  .row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--g100); }
+  .row:last-child { border-bottom: none; }
+  .num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 600; flex-shrink: 0; }
+  .num-g { background: var(--green); color: #fff; } .num-y { background: var(--yellow); color: #fff; }
+  .num-x { background: var(--g100); color: var(--g500); }
+  .tabs { display: flex; gap: 4px; background: var(--g200); padding: 4px; border-radius: 10px; margin-bottom: 16px; }
+  .tab { flex: 1; padding: 8px; text-align: center; border-radius: 8px; font-size: .85rem; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--g500); }
+  .tab.on { background: #fff; color: var(--g800); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+  .scard { border: 1.5px solid var(--g200); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: .15s; }
+  .scard:hover, .scard.sel { border-color: var(--orange); background: #fff7ed; }
+  .ebox { background: linear-gradient(135deg,#fff7ed,#fef3c7); border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 16px; }
+  .sbar { height: 8px; background: var(--g200); border-radius: 99px; overflow: hidden; margin-top: 8px; }
+  .sfill { height: 100%; border-radius: 99px; transition: width .3s; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .divider { height: 1px; background: var(--g200); margin: 16px 0; }
+  .nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--g200); padding: 8px 0; display: flex; justify-content: center; gap: 40px; z-index: 50; }
+  .navb { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .7rem; color: var(--g400); cursor: pointer; border: none; background: none; padding: 4px 12px; }
+  .navb.on { color: var(--orange); }
+  .alert { padding: 12px; border-radius: 8px; font-size: .9rem; margin-bottom: 12px; position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 200; max-width: 400px; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+  .al-ok { background: #dcfce7; color: #166534; } .al-er { background: #fef2f2; color: #991b1b; }
+  .flex { display: flex; } .g2 { gap: 8px; } .g3 { gap: 12px; } .ac { align-items: center; } .jb { justify-content: space-between; }
+  .fw { flex-wrap: wrap; } .wf { width: 100%; } .tc { text-align: center; }
+  .sm { font-size: .85rem; } .xs { font-size: .75rem; } .tg { color: var(--g500); }
+  .mt2 { margin-top: 8px; } .mt3 { margin-top: 12px; } .mb3 { margin-bottom: 12px; }
+  .hide { display: none; }
+  @media(max-width:480px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ─── DATA LAYER ──────────────────────────────────
+const STORAGE_KEY = 'hoops_rsvp_data';
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+function loadData() {
+  try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch(e) {}
+  return {
+    settings: { leagueName:'Hoops Night', location:'', dayOfWeek:4, time:'20:00', capacity:15,
+      etransferEmail:'', dropInFee:'15', adminPassword:'', signupOpensHoursBefore:72,
+      allowWaitlist:true, seasonName:'' },
+    roster: [], sessions: []
+  };
+}
+function saveData(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch(e) {} }
+
+let D = loadData();
+let state = { view:'player', adminTab:'sessions', adminAuth:false, selectedSessionId:null, managingId:null };
+
+function genId() { return Math.random().toString(36).slice(2,10); }
+function fmtDate(d) { return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); }
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
+function fmtSettingTime(t) { return new Date('2000-01-01T'+t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
+function today() { return new Date().toISOString().split('T')[0]; }
+
+let alertTimer = null;
+function showAlert(msg, type) {
+  const el = document.getElementById('alert-box');
+  el.textContent = msg;
+  el.className = 'alert ' + (type==='error' ? 'al-er' : 'al-ok');
+  el.style.display = 'block';
+  clearTimeout(alertTimer);
+  alertTimer = setTimeout(() => { el.style.display='none'; }, 2500);
+}
+
+// ─── RENDERING ───────────────────────────────────
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(([k,v]) => {
+    if (k === 'className') el.className = v;
+    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v);
+    else el.setAttribute(k, v);
+  });
+  kids.flat(3).forEach(c => { if (c != null && c !== false) el.append(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(c) : c); });
+  return el;
+}
+
+function render() {
+  saveData(D);
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  // Auto-select first upcoming session
+  const upcoming = D.sessions.filter(s => s.date >= today()).sort((a,b) => a.date.localeCompare(b.date));
+  if (!state.selectedSessionId && upcoming[0]) state.selectedSessionId = upcoming[0].id;
+
+  if (state.view === 'admin' && !state.adminAuth) {
+    app.append(renderAdminLogin());
+  } else if (state.view === 'admin') {
+    app.append(renderAdmin());
+  } else {
+    app.append(renderPlayer());
+  }
+  app.append(renderNav());
+}
+
+// ─── NAV ─────────────────────────────────────────
+function renderNav() {
+  return h('div', {className:'nav'},
+    h('button', {className:'navb'+(state.view==='player'?' on':''), onClick:()=>{state.view='player';render();}},
+      h('span', {style:{fontSize:'1.2rem'}}, '\u{1F3C0}'), 'RSVP'),
+    h('button', {className:'navb'+(state.view==='admin'?' on':''), onClick:()=>{state.view='admin';render();}},
+      h('span', {style:{fontSize:'1.2rem'}}, '\u2699\uFE0F'), 'Admin')
+  );
+}
+
+// ─── ADMIN LOGIN ─────────────────────────────────
+function renderAdminLogin() {
+  const isNew = !D.settings.adminPassword;
+  let pwVal = '';
+  const pwInput = h('input', {type:'password', placeholder: isNew ? 'Choose a password' : 'Enter admin password'});
+  pwInput.addEventListener('input', e => { pwVal = e.target.value; });
+
+  const errP = h('p', {style:{color:'var(--red)',marginTop:'8px',fontSize:'.85rem'}});
+
+  const submit = () => {
+    if (isNew) {
+      if (pwVal.length < 3) { errP.textContent = 'Password must be at least 3 characters'; return; }
+      D.settings.adminPassword = pwVal;
+      state.adminAuth = true;
+      render();
+    } else {
+      if (pwVal === D.settings.adminPassword) { state.adminAuth = true; render(); }
+      else errP.textContent = 'Wrong password';
+    }
+  };
+  pwInput.addEventListener('keydown', e => { if(e.key==='Enter') submit(); });
+
+  return h('div', {className:'container', style:{marginTop:'60px'}},
+    h('div', {className:'card tc'},
+      h('div', {style:{fontSize:'2.5rem'}}, '\u{1F512}'),
+      h('h2', {style:{marginTop:'12px'}}, isNew ? 'Set Admin Password' : 'Admin Login'),
+      isNew ? h('p', {className:'sm tg', style:{marginBottom:'12px'}}, 'First time setup \u2014 choose a password.') : null,
+      h('div', {className:'fg', style:{marginTop:'12px'}}, pwInput),
+      h('button', {className:'btn btn-or wf', onClick: submit}, isNew ? 'Set Password & Enter' : 'Enter Admin'),
+      errP,
+      h('button', {className:'btn btn-gy wf', style:{marginTop:'12px'}, onClick:()=>{state.view='player';render();}}, 'Back to Player View')
+    )
+  );
+}
+
+// ─── ADMIN PANEL ─────────────────────────────────
+function renderAdmin() {
+  const tabs = h('div', {className:'tabs'},
+    ...['sessions','roster','settings'].map(t =>
+      h('button', {className:'tab'+(state.adminTab===t?' on':''), onClick:()=>{state.adminTab=t;render();}},
+        t.charAt(0).toUpperCase()+t.slice(1)))
+  );
+
+  let content;
+  if (state.adminTab === 'settings') content = renderAdminSettings();
+  else if (state.adminTab === 'roster') content = renderAdminRoster();
+  else content = renderAdminSessions();
+
+  return h('div', null,
+    h('div', {className:'header'},
+      h('div', {className:'flex ac jb'},
+        h('h1', null, 'Admin Panel'),
+        h('button', {className:'btn btn-sm', style:{background:'rgba(255,255,255,.2)',color:'#fff'},
+          onClick:()=>{state.adminAuth=false;state.view='player';render();}}, 'Exit Admin')
+      )
+    ),
+    h('div', {className:'container'}, tabs, content)
+  );
+}
+
+// ─── ADMIN: SETTINGS ─────────────────────────────
+function renderAdminSettings() {
+  const s = D.settings;
+  const fields = {};
+  function mkField(lbl, key, type, opts) {
+    const wrap = h('div', {className:'fg'}, h('label', null, lbl));
+    let inp;
+    if (type === 'select') {
+      inp = h('select', null, ...opts.map(o => {
+        const op = h('option', {value: o.value}, o.label);
+        if (String(s[key]) === String(o.value)) op.selected = true;
+        return op;
+      }));
+      inp.addEventListener('change', e => { fields[key] = opts[0]?.num ? Number(e.target.value) : e.target.value; });
+    } else {
+      inp = h('input', {type: type||'text', value: s[key]||'', placeholder: opts?.ph||''});
+      inp.addEventListener('input', e => { fields[key] = type==='number' ? Number(e.target.value) : e.target.value; });
+    }
+    fields[key] = s[key];
+    wrap.append(inp);
+    return wrap;
+  }
+
+  const save = () => { Object.assign(D.settings, fields); saveData(D); showAlert('Settings saved!'); render(); };
+
+  const exportBtn = h('button', {className:'btn btn-bl', style:{flex:1}, onClick:()=>{
+    const blob = new Blob([JSON.stringify(D,null,2)],{type:'application/json'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='hoops-backup-'+today()+'.json'; a.click();
+  }}, '\u{1F4E5} Export Backup');
+
+  const impLabel = h('label', {className:'btn btn-gy', style:{flex:1,cursor:'pointer'}}, '\u{1F4E4} Import Backup');
+  const impInput = h('input', {type:'file', accept:'.json', style:{display:'none'}});
+  impInput.addEventListener('change', e => {
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
+      try {
+        const imp = JSON.parse(ev.target.result);
+        if (imp.settings && imp.sessions) { Object.assign(D, imp); saveData(D); showAlert('Data imported!'); render(); }
+        else showAlert('Invalid file','error');
+      } catch { showAlert('Error reading file','error'); }
+    };
+    r.readAsText(f);
+  });
+  impLabel.append(impInput);
+
+  return h('div', null,
+    h('div', {className:'card'},
+      h('h2', null, 'League Settings'),
+      mkField('League Name','leagueName','text',{ph:'e.g. Thursday Night Hoops'}),
+      mkField('Season Name','seasonName','text',{ph:'e.g. Winter 2026'}),
+      mkField('Location','location','text',{ph:'e.g. Community Centre Gym'}),
+      h('div', {className:'grid2'},
+        mkField('Day of Week','dayOfWeek','select', DAYS.map((d,i)=>({value:i,label:d,num:true}))),
+        mkField('Time','time','time')
+      ),
+      h('div', {className:'grid2'},
+        mkField('Capacity','capacity','number'),
+        mkField('Drop-in Fee ($)','dropInFee','text',{ph:'15'})
+      ),
+      mkField('e-Transfer Email','etransferEmail','email',{ph:'your@email.com'}),
+      mkField('Sign-ups Open (hours before)','signupOpensHoursBefore','number'),
+      h('button', {className:'btn btn-or wf mt2', onClick: save}, 'Save Settings')
+    ),
+    h('div', {className:'card'},
+      h('h2', null, 'Security'),
+      mkField('Change Admin Password','adminPassword','password'),
+      h('button', {className:'btn btn-or wf', onClick: save}, 'Update Password')
+    ),
+    h('div', {className:'card'},
+      h('h2', null, 'Data Management'),
+      h('div', {className:'flex g2'}, exportBtn, impLabel)
+    )
+  );
+}
+
+// ─── ADMIN: ROSTER ───────────────────────────────
+function renderAdminRoster() {
+  let newName = '', newType = 'dropin';
+  const nameInp = h('input', {placeholder:'Player name', style:{flex:'2'}});
+  nameInp.addEventListener('input', e => newName = e.target.value);
+  const typeInp = h('select', {style:{flex:'1'}},
+    h('option', {value:'dropin'}, 'Drop-in'),
+    h('option', {value:'fulltime'}, 'Full-time'));
+  typeInp.addEventListener('change', e => newType = e.target.value);
+
+  const add = () => {
+    const n = newName.trim(); if(!n) return;
+    if(D.roster.find(p=>p.name.toLowerCase()===n.toLowerCase())) { showAlert('Already exists','error'); return; }
+    D.roster.push({id:genId(),name:n,type:newType,active:true});
+    showAlert(n+' added'); render();
+  };
+  nameInp.addEventListener('keydown', e => { if(e.key==='Enter') add(); });
+
+  function playerRow(p) {
+    return h('div', {className:'row'},
+      h('div', {className:'flex ac g3'},
+        h('span', {style:{fontWeight:500}}, p.name),
+        h('span', {className:'badge '+(p.type==='fulltime'?'b-pu':'b-or')}, p.type==='fulltime'?'Full-time':'Drop-in')
+      ),
+      h('div', {className:'flex g2'},
+        h('button', {className:'btn btn-xs btn-out', onClick:()=>{
+          p.type = p.type==='fulltime'?'dropin':'fulltime'; render();
+        }}, p.type==='fulltime'?'\u2192 Drop-in':'\u2192 Full-time'),
+        h('button', {className:'btn btn-xs btn-out', style:{color:'var(--red)'}, onClick:()=>{
+          p.active = !p.active; render();
+        }}, p.active ? '\u2716' : '\u2714')
+      )
+    );
+  }
+
+  const ft = D.roster.filter(p=>p.type==='fulltime'&&p.active);
+  const di = D.roster.filter(p=>p.type==='dropin'&&p.active);
+  const inact = D.roster.filter(p=>!p.active);
+
+  const parts = [
+    h('div', {className:'card'},
+      h('h2', null, 'Add Player'),
+      h('div', {className:'flex g2'},
+        nameInp, typeInp,
+        h('button', {className:'btn btn-or', onClick:add}, '+')
+      )
+    ),
+    h('div', {className:'card'},
+      h('h2', null, 'Full-Time Members ('+ft.length+')'),
+      ft.length ? h('div', null, ...ft.map(playerRow)) : h('p', {className:'sm tg'}, 'No full-time members yet')
+    ),
+    h('div', {className:'card'},
+      h('h2', null, 'Drop-in Players ('+di.length+')'),
+      di.length ? h('div', null, ...di.map(playerRow)) : h('p', {className:'sm tg'}, 'No drop-in players yet')
+    )
+  ];
+  if (inact.length) parts.push(h('div', {className:'card'},
+    h('h2', {className:'tg'}, 'Inactive ('+inact.length+')'),
+    ...inact.map(playerRow)));
+  return h('div', null, ...parts);
+}
+
+// ─── ADMIN: SESSIONS ─────────────────────────────
+function renderAdminSessions() {
+  if (state.managingId) {
+    const sess = D.sessions.find(s=>s.id===state.managingId);
+    if (sess) return renderSessionManager(sess);
+    state.managingId = null;
+  }
+
+  let genStart = '', genWeeks = 12;
+  const genPanel = h('div', {style:{background:'var(--g50)',borderRadius:'10px',padding:'14px',marginBottom:'14px',display:'none'}});
+  const startInp = h('input', {type:'date'});
+  startInp.addEventListener('input', e => genStart=e.target.value);
+  const weeksInp = h('input', {type:'number', value:'12', min:'1', max:'52'});
+  weeksInp.addEventListener('input', e => genWeeks=Number(e.target.value));
+
+  const doGen = () => {
+    if(!genStart) return;
+    const start = new Date(genStart+'T12:00:00');
+    for(let i=0;i<genWeeks;i++){
+      const d=new Date(start); d.setDate(d.getDate()+(i*7));
+      const ds=d.toISOString().split('T')[0];
+      if(!D.sessions.find(s=>s.date===ds))
+        D.sessions.push({id:genId(),date:ds,capacity:D.settings.capacity,rsvps:[],notes:''});
+    }
+    D.sessions.sort((a,b)=>a.date.localeCompare(b.date));
+    showAlert('Generated '+genWeeks+' sessions!'); render();
+  };
+
+  genPanel.append(
+    h('div', {className:'grid2'},
+      h('div', {className:'fg'}, h('label',null,'First Session Date'), startInp),
+      h('div', {className:'fg'}, h('label',null,'Number of Weeks'), weeksInp)
+    ),
+    h('button', {className:'btn btn-gr wf', onClick:doGen}, 'Generate Sessions')
+  );
+
+  const toggleGen = h('button', {className:'btn btn-sm btn-or', onClick:()=>{
+    genPanel.style.display = genPanel.style.display==='none'?'block':'none';
+  }}, '+ Generate Sessions');
+
+  const up = D.sessions.filter(s=>s.date>=today()).sort((a,b)=>a.date.localeCompare(b.date));
+  const past = D.sessions.filter(s=>s.date<today()).sort((a,b)=>b.date.localeCompare(a.date));
+
+  const sessionList = [];
+  if (up.length) {
+    sessionList.push(h('h3', {className:'sm', style:{color:'var(--green)'}}, 'Upcoming ('+up.length+')'));
+    up.forEach(s => {
+      const rc = (s.rsvps||[]).filter(r=>r.status!=='not_available').length;
+      const cap = s.capacity||D.settings.capacity;
+      const paid = (s.rsvps||[]).filter(r=>r.paid&&r.type!=='fulltime').length;
+      const unpaid = (s.rsvps||[]).filter(r=>!r.paid&&r.type!=='fulltime'&&r.status!=='not_available').length;
+      sessionList.push(h('div', {className:'scard', onClick:()=>{state.managingId=s.id;render();}},
+        h('div', {className:'flex ac jb'},
+          h('div', null,
+            h('div', {style:{fontWeight:600}}, fmtDate(s.date)),
+            h('div', {className:'xs tg'}, rc+'/'+cap+' signed up')
+          ),
+          h('div', {className:'flex g2'},
+            paid>0 ? h('span',{className:'badge b-gr'},paid+' paid') : null,
+            unpaid>0 ? h('span',{className:'badge b-yl'},unpaid+' unpaid') : null
+          )
+        )
+      ));
+    });
+  }
+  if (past.length) {
+    sessionList.push(h('div',{className:'divider'}));
+    sessionList.push(h('h3',{className:'sm tg'},'Past ('+past.length+')'));
+    past.slice(0,5).forEach(s => {
+      const rc=(s.rsvps||[]).filter(r=>r.status!=='not_available').length;
+      sessionList.push(h('div',{className:'scard',style:{opacity:.7},onClick:()=>{state.managingId=s.id;render();}},
+        h('div',{className:'flex ac jb'},
+          h('span',{style:{fontWeight:500}},fmtDate(s.date)),
+          h('span',{className:'sm tg'},rc+' attended')
+        )
+      ));
+    });
+  }
+  if (!up.length && !past.length) sessionList.push(h('p',{className:'sm tg tc',style:{padding:'20px'}},'No sessions yet. Generate some above!'));
+
+  return h('div',{className:'card'},
+    h('div',{className:'flex ac jb mb3'}, h('h2',{style:{margin:0}},'Sessions'), toggleGen),
+    genPanel,
+    ...sessionList
+  );
+}
+
+// ─── SESSION MANAGER ─────────────────────────────
+function renderSessionManager(sess) {
+  const rsvps = sess.rsvps||[];
+  const confirmed = rsvps.filter(r=>r.status!=='not_available');
+  const notAvail = rsvps.filter(r=>r.status==='not_available');
+  const cap = sess.capacity||D.settings.capacity;
+
+  const capInp = h('input',{type:'number',value:String(sess.capacity||D.settings.capacity)});
+  capInp.addEventListener('input',e=>{sess.capacity=Number(e.target.value);saveData(D);});
+
+  const shareBtn = h('button',{className:'btn btn-sm btn-bl',onClick:()=>{
+    const lines=['\u{1F3C0} '+D.settings.leagueName+' \u2014 '+fmtDate(sess.date)];
+    if(D.settings.time) lines.push('\u23F0 '+fmtSettingTime(D.settings.time));
+    if(D.settings.location) lines.push('\u{1F4CD} '+D.settings.location);
+    lines.push('',confirmed.length+'/'+cap+' spots filled');
+    if(confirmed.length){lines.push('','Who\'s in:');
+      confirmed.forEach((r,i)=>{const tag=r.type==='fulltime'?' (FT)':r.paid?' \u2705':' \u{1F4B0}';lines.push((i+1)+'. '+r.name+tag);});}
+    if(D.settings.etransferEmail) lines.push('','\u{1F4B0} Drop-in: $'+(D.settings.dropInFee||'15')+' \u2192 '+D.settings.etransferEmail);
+    navigator.clipboard?.writeText(lines.join('\n')); showAlert('Copied to clipboard!');
+  }}, '\u{1F4CB} Share');
+
+  const delBtn = h('button',{className:'btn btn-sm btn-rd',onClick:()=>{
+    if(confirm('Delete this session?')){D.sessions=D.sessions.filter(s=>s.id!==sess.id);state.managingId=null;showAlert('Deleted');render();}
+  }}, '\u{1F5D1}');
+
+  const rsvpRows = confirmed.map((r,i)=>{
+    const wl = i>=cap;
+    return h('div',{className:'row'},
+      h('div',{className:'flex ac g3'},
+        h('div',{className:'num '+(wl?'num-y':'num-g')},String(i+1)),
+        h('div',null,
+          h('div',{style:{fontWeight:500}},r.name),
+          h('div',{className:'xs tg'},fmtTime(r.timestamp)+(wl?' \u00B7 Waitlisted':''))
+        )
+      ),
+      h('div',{className:'flex ac g2'},
+        h('span',{className:'badge '+(r.type==='fulltime'?'b-pu':'b-or')},r.type==='fulltime'?'FT':'DI'),
+        r.type!=='fulltime' ?
+          h('button',{className:'btn btn-xs '+(r.paid?'btn-gr':'btn-gy'),onClick:()=>{r.paid=!r.paid;render();}},
+            r.paid?'\u2713 Paid':'$ Mark Paid') : null,
+        h('button',{className:'btn btn-xs btn-out',style:{color:'var(--red)'},onClick:()=>{
+          sess.rsvps=sess.rsvps.filter(x=>x.id!==r.id);showAlert('Removed');render();
+        }}, '\u2716')
+      )
+    );
+  });
+
+  const naRows = notAvail.length ? [
+    h('div',{className:'divider'}),
+    h('h3',{className:'sm tg'},'Not Available ('+notAvail.length+')'),
+    ...notAvail.map(r=>h('div',{className:'row'},
+      h('div',{className:'flex ac g3'},h('div',{className:'num num-x'},'\u2716'),h('span',{style:{color:'var(--g400)'}},r.name)),
+      h('button',{className:'btn btn-xs btn-out',style:{color:'var(--red)'},onClick:()=>{
+        sess.rsvps=sess.rsvps.filter(x=>x.id!==r.id);render();
+      }},'\u2716')
+    ))
+  ] : [];
+
+  const paidCount = confirmed.filter(r=>r.paid||r.type==='fulltime').length;
+  const unpaidCount = confirmed.filter(r=>!r.paid&&r.type!=='fulltime').length;
+  const revenue = confirmed.filter(r=>r.type!=='fulltime'&&r.paid).length*(parseFloat(D.settings.dropInFee)||15);
+
+  return h('div',null,
+    h('button',{className:'btn btn-sm btn-out',style:{marginBottom:'12px'},onClick:()=>{state.managingId=null;render();}},'\u2190 Back to Sessions'),
+    h('div',{className:'card'},
+      h('div',{className:'flex ac jb'},
+        h('div',null,h('h2',{style:{margin:0}},fmtDate(sess.date)),h('span',{className:'sm tg'},confirmed.length+'/'+cap+' spots')),
+        h('div',{className:'flex g2'},shareBtn,delBtn)
+      ),
+      h('div',{className:'fg mt3'},h('label',null,'Session Capacity'),capInp)
+    ),
+    h('div',{className:'card'},
+      h('h3',null,'RSVPs ('+confirmed.length+')'),
+      confirmed.length ? h('div',null,...rsvpRows,...naRows) : h('p',{className:'sm tg'},'No RSVPs yet')
+    ),
+    h('div',{className:'card'},
+      h('h3',null,'Quick Stats'),
+      h('div',{className:'grid2'},
+        h('div',{style:{background:'var(--g50)',borderRadius:'8px',padding:'12px',textAlign:'center'}},
+          h('div',{style:{fontSize:'1.5rem',fontWeight:700,color:'var(--green)'}},String(paidCount)),
+          h('div',{className:'xs tg'},'Confirmed & Paid')
+        ),
+        h('div',{style:{background:'var(--g50)',borderRadius:'8px',padding:'12px',textAlign:'center'}},
+          h('div',{style:{fontSize:'1.5rem',fontWeight:700,color:'var(--yellow)'}},String(unpaidCount)),
+          h('div',{className:'xs tg'},'Awaiting Payment')
+        )
+      ),
+      revenue>0 ? h('div',{className:'mt3 sm tc tg'},'Drop-in revenue: $'+revenue) : null
+    )
+  );
+}
+
+// ─── PLAYER VIEW ─────────────────────────────────
+function renderPlayer() {
+  const upcoming = D.sessions.filter(s=>s.date>=today()).sort((a,b)=>a.date.localeCompare(b.date));
+  const sess = D.sessions.find(s=>s.id===state.selectedSessionId) || upcoming[0];
+
+  if(!sess) return h('div',null,
+    h('div',{className:'header'},
+      h('h1',null,D.settings.leagueName||'Hoops Night'),
+      D.settings.seasonName ? h('p',null,D.settings.seasonName) : null
+    ),
+    h('div',{className:'container'},
+      h('div',{className:'card tc'},
+        h('div',{style:{fontSize:'2.5rem'}},'\u{1F4C5}'),
+        h('h2',{style:{marginTop:'12px'}},'No Upcoming Sessions'),
+        h('p',{className:'sm tg'},'Check back later or ask the organizer to schedule sessions.')
+      )
+    )
+  );
+
+  const rsvps = sess.rsvps||[];
+  const confirmed = rsvps.filter(r=>r.status!=='not_available');
+  const notAvail = rsvps.filter(r=>r.status==='not_available');
+  const cap = sess.capacity||D.settings.capacity;
+  const isFull = confirmed.length>=cap;
+  const fillPct = Math.min(100,(confirmed.length/cap)*100);
+  const barColor = fillPct>=100?'var(--red)':fillPct>=80?'var(--yellow)':'var(--green)';
+
+  const isOpen = ()=>{
+    const sd=new Date(sess.date+'T'+(D.settings.time||'20:00'));
+    return Date.now()>=sd.getTime()-(D.settings.signupOpensHoursBefore||72)*3600000;
+  };
+
+  // Session selector
+  let selector = null;
+  if(upcoming.length>1) {
+    selector = h('div',{className:'card'},
+      h('h3',{style:{margin:0}},'Upcoming Sessions'),
+      h('div',{className:'flex g2 fw',style:{marginTop:'8px'}},
+        ...upcoming.slice(0,4).map(s=>{
+          const rc=(s.rsvps||[]).filter(r=>r.status!=='not_available').length;
+          return h('button',{className:'scard'+(s.id===sess.id?' sel':''),style:{flex:1,minWidth:'140px',padding:'10px 12px'},
+            onClick:()=>{state.selectedSessionId=s.id;render();}},
+            h('div',{style:{fontWeight:600,fontSize:'.9rem'}},fmtDate(s.date)),
+            h('div',{className:'xs tg'},rc+'/'+(s.capacity||D.settings.capacity)+' spots')
+          );
+        })
+      )
+    );
+  }
+
+  // RSVP form
+  let rsvpName = '';
+  const nameInp = h('input',{placeholder:'Type your name...',list:'pnames'});
+  nameInp.addEventListener('input',e=>rsvpName=e.target.value);
+  const datalist = h('datalist',{id:'pnames'}, ...D.roster.filter(p=>p.active).map(p=>h('option',{value:p.name})));
+
+  const doRSVP = (status) => {
+    const name = rsvpName.trim(); if(!name) return;
+    const rp = D.roster.find(p=>p.name.toLowerCase()===name.toLowerCase());
+    const ptype = rp?.type==='fulltime'?'fulltime':'dropin';
+    if(!sess.rsvps) sess.rsvps=[];
+    const ex = sess.rsvps.findIndex(r=>r.name.toLowerCase()===name.toLowerCase());
+    if(ex>=0){
+      sess.rsvps[ex].status=status; sess.rsvps[ex].timestamp=Date.now();
+      if(status==='not_available') sess.rsvps[ex].paid=false;
+    } else {
+      sess.rsvps.push({id:genId(),name:rp?.name||name,type:ptype,status,paid:ptype==='fulltime',timestamp:Date.now()});
+    }
+    showAlert(status==='not_available'?'Marked as not available':(isFull?'You\'re on the waitlist!':'You\'re signed up!'));
+    render();
+  };
+  nameInp.addEventListener('keydown',e=>{if(e.key==='Enter'&&rsvpName.trim()) doRSVP('playing');});
+
+  const ftHint = h('p',{className:'xs mt2',style:{color:'var(--green)',display:'none'}},'\u2713 Full-time member \u2014 auto-confirmed');
+  nameInp.addEventListener('input',e=>{
+    const match=D.roster.find(p=>p.name.toLowerCase()===e.target.value.trim().toLowerCase()&&p.type==='fulltime');
+    ftHint.style.display=match?'block':'none';
+  });
+
+  const formContent = isOpen() ? [
+    h('div',{className:'fg'},h('label',null,'Your Name'),nameInp,datalist),
+    h('div',{className:'flex g2'},
+      h('button',{className:'btn btn-gr',style:{flex:2},onClick:()=>doRSVP('playing')},'\u2714 I\'m In'),
+      h('button',{className:'btn btn-gy',style:{flex:1},onClick:()=>doRSVP('not_available')},'Can\'t Make It')
+    ),
+    ftHint
+  ] : [h('div',{className:'tc tg',style:{padding:'16px 0'}},
+    h('div',{style:{fontSize:'2rem'}},'\u23F0'),
+    h('p',{className:'mt2'},'Sign-ups open '+D.settings.signupOpensHoursBefore+'h before the session'))];
+
+  // RSVP list
+  const listRows = confirmed.map((r,i)=>{
+    const wl=i>=cap;
+    return h('div',{className:'row'},
+      h('div',{className:'flex ac g3'},
+        h('div',{className:'num '+(wl?'num-y':'num-g')},String(i+1)),
+        h('div',null,
+          h('div',{style:{fontWeight:500}},r.name),
+          h('div',{className:'xs tg'},fmtTime(r.timestamp))
+        )
+      ),
+      h('div',{className:'flex ac g2'},
+        r.type==='fulltime'?h('span',{className:'badge b-pu'},'Full-time'):h('span',{className:'badge b-or'},'Drop-in'),
+        r.type!=='fulltime'?(r.paid?h('span',{className:'badge b-gr'},'Paid'):h('span',{className:'badge b-yl'},'Unpaid')):null,
+        wl?h('span',{className:'badge b-yl'},'Waitlist'):null
+      )
+    );
+  });
+
+  const naSection = notAvail.length ? [
+    h('div',{className:'divider'}),
+    h('h3',{className:'sm tg'},'Not Available ('+notAvail.length+')'),
+    ...notAvail.map(r=>h('div',{className:'row'},
+      h('div',{className:'flex ac g3'},h('div',{className:'num num-x'},'\u2716'),h('span',{style:{color:'var(--g400)'}},r.name))))
+  ] : [];
+
+  return h('div',null,
+    h('div',{className:'header'},
+      h('h1',null,D.settings.leagueName||'Hoops Night'),
+      D.settings.seasonName?h('p',null,D.settings.seasonName):null
+    ),
+    h('div',{className:'container'},
+      selector,
+      // Session info card
+      h('div',{className:'card'},
+        h('div',{className:'flex ac g3'},
+          h('div',{style:{width:'48px',height:'48px',borderRadius:'12px',background:'var(--orange)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',flexShrink:0,fontSize:'1.5rem'}},'\u{1F3C0}'),
+          h('div',null,
+            h('h2',{style:{margin:0}},fmtDate(sess.date)),
+            h('div',{className:'sm tg',style:{marginTop:'2px'}},
+              D.settings.time?fmtSettingTime(D.settings.time):'',
+              D.settings.location?' \u00B7 '+D.settings.location:'')
+          )
+        ),
+        h('div',{style:{marginTop:'12px'}},
+          h('div',{className:'flex ac jb sm'},
+            h('span',{style:{fontWeight:600}},confirmed.length+' / '+cap+' spots filled'),
+            confirmed.length>cap?h('span',{className:'badge b-yl'},(confirmed.length-cap)+' waitlisted'):null
+          ),
+          h('div',{className:'sbar'},h('div',{className:'sfill',style:{width:fillPct+'%',background:barColor}}))
+        )
+      ),
+      // RSVP form
+      h('div',{className:'card'}, h('h3',null,'Sign Up'), ...formContent),
+      // e-transfer box
+      D.settings.etransferEmail ? h('div',{className:'ebox'},
+        h('div',{className:'sm',style:{fontWeight:600,color:'var(--orange-dark)'}},'\u{1F4B0} Drop-in Fee: $'+(D.settings.dropInFee||'15')),
+        h('div',{className:'xs tg mt2'},'Send e-Transfer to lock in your spot:'),
+        h('div',{style:{fontWeight:700,fontSize:'1.05rem',marginTop:'4px',wordBreak:'break-all'}},D.settings.etransferEmail),
+        h('div',{className:'xs tg mt2'},'Include your name and session date in the memo')
+      ) : null,
+      // RSVP list
+      h('div',{className:'card'},
+        h('h3',null,'Who\'s In ('+confirmed.length+')'),
+        confirmed.length ? h('div',null,...listRows,...naSection) : h('p',{className:'sm tg'},'No one signed up yet \u2014 be the first!')
+      )
+    )
+  );
+}
+
+// ─── INIT ────────────────────────────────────────
+document.body.insertBefore(h('div',{id:'alert-box',className:'alert',style:{display:'none'}}), document.getElementById('app'));
+render();
+</script>
+</body>
+</html>
