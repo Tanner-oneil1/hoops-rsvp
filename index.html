@@ -209,6 +209,30 @@ function getUpcomingDates(run) {
   return generateSessionDates(run).filter(d => d >= today);
 }
 
+function isSignupOpen(run, date) {
+  const cutoff = run.signupOpenHours;
+  if (!cutoff && cutoff !== 0) return true;
+  const startTime = run.startTime || '20:00';
+  const sessionStart = new Date(date + 'T' + startTime + ':00');
+  const openTime = new Date(sessionStart.getTime() - cutoff * 60 * 60 * 1000);
+  return new Date() >= openTime;
+}
+
+function getSignupOpensLabel(run, date) {
+  const cutoff = run.signupOpenHours;
+  if (!cutoff && cutoff !== 0) return '';
+  const startTime = run.startTime || '20:00';
+  const sessionStart = new Date(date + 'T' + startTime + ':00');
+  const openTime = new Date(sessionStart.getTime() - cutoff * 60 * 60 * 1000);
+  const now = new Date();
+  if (now >= openTime) return '';
+  const diffMs = openTime - now;
+  const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHrs / 24);
+  if (diffDays > 0) return `Sign-up opens in ${diffDays}d ${diffHrs % 24}h`;
+  return `Sign-up opens in ${diffHrs}h ${Math.floor((diffMs % (1000*60*60)) / (1000*60))}m`;
+}
+
 function App() {
   const [view, setView] = useState('player');
   const [adminPass, setAdminPass] = useState('');
@@ -226,11 +250,19 @@ function App() {
     const run = runs.find(r => r.id === runId);
     if (!run) return { signups: [], waitlist: [], cancelled: [] };
     const base = sessions[key] || { signups: [], waitlist: [], cancelled: [] };
-    const ftPlayers = (run.fullTimePlayers || []).filter(ft =>
-      !base.signups.some(s => s.playerId === ft.id) &&
-      !base.cancelled.some(c => c === ft.id)
-    ).map(ft => ({ playerId: ft.id, firstName: ft.firstName, lastName: ft.lastName, type: 'fulltime', paid: true, signupTime: ft.addedAt || new Date().toISOString() }));
-    return { ...base, signups: [...ftPlayers, ...base.signups], waitlist: base.waitlist || [], cancelled: base.cancelled || [] };
+    const ftNames = new Set((run.fullTimePlayers || []).map(ft => `${ft.firstName.toLowerCase()}|${ft.lastName.toLowerCase()}`));
+    const upgradedSignups = base.signups.map(s => {
+      const nk = `${s.firstName.toLowerCase()}|${s.lastName.toLowerCase()}`;
+      if (ftNames.has(nk)) return { ...s, type: 'fulltime', paid: true };
+      return s;
+    });
+    const signedUpNames = new Set(upgradedSignups.map(s => `${s.firstName.toLowerCase()}|${s.lastName.toLowerCase()}`));
+    const cancelledIds = new Set(base.cancelled || []);
+    const ftPlayers = (run.fullTimePlayers || []).filter(ft => {
+      const nk = `${ft.firstName.toLowerCase()}|${ft.lastName.toLowerCase()}`;
+      return !signedUpNames.has(nk) && !cancelledIds.has(ft.id);
+    }).map(ft => ({ playerId: ft.id, firstName: ft.firstName, lastName: ft.lastName, type: 'fulltime', paid: true, signupTime: ft.addedAt || new Date().toISOString() }));
+    return { ...base, signups: [...ftPlayers, ...upgradedSignups], waitlist: base.waitlist || [], cancelled: base.cancelled || [] };
   }, [runs, sessions]);
 
   const updateSession = useCallback((runId, date, updater) => {
@@ -250,7 +282,6 @@ function App() {
       const pastDates = allDates.filter(d => d < today);
       pastDates.forEach(date => {
         const sess = getSession(run.id, date);
-
         const activeCount = sess.signups.length;
         if (activeCount > 0) {
           totalSessions++;
@@ -334,6 +365,8 @@ function App() {
             const spotsLeft = Math.max(0, limit - session.signups.length);
             const names = signupState[date] || {};
             const msg = messages[date];
+            const open = isSignupOpen(run, date);
+            const opensLabel = getSignupOpensLabel(run, date);
             return (
               <div key={date}>
                 {msg && <div className={`msg msg-${msg.type}`}>{msg.text}</div>}
@@ -344,11 +377,15 @@ function App() {
                     {spotsLeft > 0 ? <span style={{color:'#34d399'}}> · {spotsLeft} open</span> : <span style={{color:'#f87171'}}> · Full</span>}
                     {(session.waitlist||[]).length > 0 && <span> · {session.waitlist.length} waitlisted</span>}
                   </div>
-                  <div className="signup-inline">
-                    <input className="input input-sm" placeholder="First" value={names.firstName || ''} onChange={e => setSignupState(s => ({ ...s, [date]: { ...s[date], firstName: e.target.value } }))} />
-                    <input className="input input-sm" placeholder="Last" value={names.lastName || ''} onChange={e => setSignupState(s => ({ ...s, [date]: { ...s[date], lastName: e.target.value } }))} onKeyDown={e => e.key === 'Enter' && handleSignup(date)} />
-                    <button className="btn btn-primary btn-sm" onClick={() => handleSignup(date)}>Sign Up</button>
-                  </div>
+                  {open ? (
+                    <div className="signup-inline">
+                      <input className="input input-sm" placeholder="First" value={names.firstName || ''} onChange={e => setSignupState(s => ({ ...s, [date]: { ...s[date], firstName: e.target.value } }))} />
+                      <input className="input input-sm" placeholder="Last" value={names.lastName || ''} onChange={e => setSignupState(s => ({ ...s, [date]: { ...s[date], lastName: e.target.value } }))} onKeyDown={e => e.key === 'Enter' && handleSignup(date)} />
+                      <button className="btn btn-primary btn-sm" onClick={() => handleSignup(date)}>Sign Up</button>
+                    </div>
+                  ) : (
+                    <div className="badge badge-gray">{opensLabel}</div>
+                  )}
                 </div>
                 {session.signups.length > 0 && <SessionRoster session={session} />}
               </div>
@@ -380,24 +417,14 @@ function App() {
     );
   };
 
-  /* ADMIN LOGIN */
-  const AdminLogin = () => (
-    <div className="login-box">
-      <div style={{fontSize: 48, marginBottom: 16}}>🔒</div>
-      <h2>Admin Access</h2>
-      <p>Enter the admin password to manage runs and sessions.</p>
-      {adminError && <div className="msg msg-error">{adminError}</div>}
-      <input className="input" type="password" placeholder="Password" value={adminPass} onChange={e => { setAdminPass(e.target.value); setAdminError(''); }} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-      <button className="btn btn-primary" style={{width:'100%', padding:'12px', marginTop: 8}} onClick={handleLogin}>Log In</button>
-    </div>
-  );
+  /* AdminLogin is rendered inline below to avoid focus loss from component re-creation */
 
   /* ADMIN: RUNS TAB */
   const AdminRunsTab = () => (
     <div>
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 20}}>
         <h3 style={{color:'#f1f5f9', fontSize: 18, fontWeight: 700}}>Manage Runs</h3>
-        <button className="btn btn-primary" onClick={() => setEditingRun({ id: uid(), name: '', location: '', dayOfWeek: 4, startTime: '20:00', duration: 90, seasonStart: '', seasonEnd: '', rosterLimit: 15, dropInFee: 15, seasonFee: 150, fullTimePlayers: [], blockedWeeks: [] })}>+ New Run</button>
+        <button className="btn btn-primary" onClick={() => setEditingRun({ id: uid(), name: '', location: '', dayOfWeek: 4, startTime: '20:00', duration: 90, seasonStart: '', seasonEnd: '', rosterLimit: 15, dropInFee: 15, seasonFee: 150, signupOpenHours: 48, fullTimePlayers: [], blockedWeeks: [] })}>+ New Run</button>
       </div>
       {editingRun && <RunForm run={editingRun} onSave={r => { setRuns(prev => prev.some(x => x.id === r.id) ? prev.map(x => x.id === r.id ? r : x) : [...prev, r]); setEditingRun(null); }} onCancel={() => setEditingRun(null)} />}
       {runs.length === 0 && !editingRun && <div className="empty"><div className="icon">📋</div><p>No runs yet. Create your first run to get started.</p></div>}
@@ -445,6 +472,7 @@ function App() {
           <div className="form-group"><label className="label">Season End</label><input className="input" type="date" value={form.seasonEnd} onChange={e => set('seasonEnd', e.target.value)} /></div>
           <div className="form-group"><label className="label">Drop-in Fee ($)</label><input className="input" type="number" value={form.dropInFee} onChange={e => set('dropInFee', parseFloat(e.target.value) || 0)} /></div>
           <div className="form-group"><label className="label">Season Fee ($)</label><input className="input" type="number" value={form.seasonFee} onChange={e => set('seasonFee', parseFloat(e.target.value) || 0)} /></div>
+          <div className="form-group full"><label className="label">Sign-Up Opens (hours before session)</label><input className="input" type="number" value={form.signupOpenHours ?? ''} onChange={e => set('signupOpenHours', e.target.value === '' ? null : parseFloat(e.target.value))} placeholder="e.g. 48 = 2 days before. Leave blank for always open" style={{maxWidth: 300}} /></div>
           <div className="form-group full">
             <label className="label">Blocked Weeks (Holidays)</label>
             <div style={{display:'flex', gap: 8, alignItems:'center'}}>
@@ -657,7 +685,16 @@ function App() {
       </div>
       <div className="container">
         {view === 'player' && <PlayerView />}
-        {view === 'admin-login' && <AdminLogin />}
+        {view === 'admin-login' && (
+          <div className="login-box">
+            <div style={{fontSize: 48, marginBottom: 16}}>🔒</div>
+            <h2>Admin Access</h2>
+            <p>Enter the admin password to manage runs and sessions.</p>
+            {adminError && <div className="msg msg-error">{adminError}</div>}
+            <input className="input" type="password" placeholder="Password" value={adminPass} onChange={e => { setAdminPass(e.target.value); setAdminError(''); }} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+            <button className="btn btn-primary" style={{width:'100%', padding:'12px', marginTop: 8}} onClick={handleLogin}>Log In</button>
+          </div>
+        )}
         {view === 'admin' && <AdminView />}
       </div>
     </div>
@@ -668,3 +705,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
+
